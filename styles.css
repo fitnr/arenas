@@ -1,8 +1,10 @@
 .cb_2014_us_nation_5m {
-    fill: #BBB
+    fill: #BBB;
+    stroke: none;
 }
 .tl_2015_us_uac10 {
-    fill: #999
+    fill: #999;
+    stroke: none;
 }
 .places {
     fill: none;
