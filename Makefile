@@ -13,7 +13,25 @@ TSRS = -t_srs EPSG:4326
 # todo: city centers and boundaries
 # todo: radii in city center
 
+CITIES = $(shell cut -d, -f2 citycenters.txt | sed 's/ /_/g')
+
+SVGISFLAGS = -x -f 100 -c styles.css -j local
+
 all: 
+
+# Maps
+
+GEO = GENZ2014/shp/cb_2014_us_nation_5m.shp \
+	TIGER2015/UAC/tl_2015_us_uac10.shp \
+	TIGER2015/places.shp \
+	wiki/National_Hockey_League.geojson \
+	wiki/National_Football_League.geojson \
+	wiki/Major_League_Baseball.geojson \
+	wiki/National_Basketball_Association.geojson
+
+svg/%.svg: city/bounds.csv $(GEO)
+	grep $* $< | cut -d, -f2 | \
+	xargs -J % svgis draw $(SVGISFLAGS) --bounds % $(filter %.shp,$^) -o $@; \
 
 # Geocoding
 # set google key in vars

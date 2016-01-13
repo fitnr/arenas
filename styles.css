@@ -1,0 +1,30 @@
+.cb_2014_us_nation_5m {
+    fill: #BBB
+}
+.tl_2015_us_uac10 {
+    fill: #999
+}
+.places {
+    fill: none;
+    stroke-width: 1px;
+    stroke: #333;
+}
+circle {
+    stroke-width: 6px;
+}
+.National_Hockey_League {
+    stroke: darkcyan;
+    fill: darkcyan;
+}
+.National_Football_League {
+    stroke: red;
+    fill: red;
+}
+.Major_League_Baseball {
+    stroke: orange;
+    fill: orange;
+}
+.National_Basketball_Association {
+    stroke: cornflowerblue;
+    fill: cornflowerblue;
+}
