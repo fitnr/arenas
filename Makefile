@@ -6,6 +6,8 @@ STATES_WITH_ARENA = 04 06 06 08 11 12 \
 	36 37 39 40 41 \
 	42 47 48 49 53 55
 
+TSRS = -t_srs EPSG:4326
+
 # todo: major city outline
 # todo: urban areas
 # todo: city centers and boundaries
@@ -22,15 +24,23 @@ TIGER2015/places.shp: $(foreach x,$(STATES_WITH_ARENA),TIGER2015/PLACE/tl_2015_$
 
 TIGER2015/PLACE/tl_2015_%_place.shp: TIGER2015/PLACE/tl_2015_%_place.zip
 	ogr2ogr $@ /vsizip/$</$(@F) \
-	-t_srs EPSG:4326 -select GEOID,NAME -where "PCICBSA='Y'"
+	$(TSRS) -select GEOID,NAME -where "PCICBSA='Y'"
 
 TIGER2015/UAC/tl_2015_us_uac10.shp: TIGER2015/UAC/tl_2015_us_uac10.zip
 	ogr2ogr $@ /vsizip/$</$(@F) \
-	-t_srs EPSG:4326 -select GEOID10,NAME10
+	$(TSRS) -select GEOID10,NAME10
 
 TIGER2015/%.zip:
 	@mkdir -p $(@D)
 	curl -so $@ ftp://ftp2.census.gov/geo/tiger/$@
+
+GENZ2014/shp/cb_2014_us_nation_5m.shp: GENZ2014/shp/cb_2014_us_nation_5m.zip
+	ogr2ogr $@ /vsizip/$</$(@F) $(TSRS)
+
+GENZ2014/shp/cb_2014_us_nation_5m.zip: | GENZ2014/shp
+	curl -o $@ -s http://www2.census.gov/geo/tiger/$@
+
+GENZ2014/shp:; mkdir -p $@
 
 # Stadia
 
