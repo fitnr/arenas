@@ -18,7 +18,7 @@ all:
 
 # Maps
 
-GEO = GENZ2014/shp/cb_2014_us_nation_5m.shp \
+GEO = GENZ2014/shp/cb_2014_us_state_5m.shp \
 	TIGER2015/UAC/tl_2015_us_uac10.shp \
 	TIGER2015/places.shp \
 	wiki/National_Hockey_League.shp \
