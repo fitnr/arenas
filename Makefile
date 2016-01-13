@@ -45,15 +45,15 @@ city/bounds.csv: city/envelope.shp
 	MbrMinY(Geometry) || ' ' || MbrMaxX(Geometry) || ' ' || \
 	MbrMaxY(Geometry) bounds FROM envelope"
 
-city/envelope.shp: GENZ2014/shp/cb_2014_us_cbsa_20m.shp city/centers.geojson
-	 ogr2ogr $@ $< $(TSRS) -dialect sqlite \
+city/envelope.shp: GENZ2014/shp/cb_2014_us_cbsa_20m.shp city/centers.shp
+	 ogr2ogr -overwrite $@ $< $(TSRS) -dialect sqlite \
 	 -sql "SELECT Envelope(a.Geometry) Geometry, a.GEOID, b.name \
-	 FROM '$(filter %.geojson,$^)'.OGRGeoJSON b, $(basename $(<F)) a WHERE Within(b.Geometry, a.Geometry)"
+	 FROM 'city/centers.shp'.centers b, $(basename $(<F)) a WHERE Within(b.Geometry, a.Geometry)"
 
 city/centers.shp: city/centers.csv
-	ogr2ogr -f 'ESRI Shapefile' $@ $< \
+	ogr2ogr -overwrite -f 'ESRI Shapefile' $@ $< \
 	-s_srs EPSG:4326 $(TSRS) \
-	-dialect sqlite -sql "SELECT MakePoint(CAST(x as REAL), CAST(y as REAL)) Geometry, CAST(x as REAL) x, CAST(y as REAL) y, REPLACE(REPLACE('Old Toronto', 'Toronto', name), ' ', '_') name FROM centers"
+	-dialect sqlite -sql "SELECT MakePoint(CAST(x as REAL), CAST(y as REAL)) Geometry, CAST(x as REAL) x, CAST(y as REAL) y, REPLACE(REPLACE(name, 'Old Toronto', 'Toronto'), ' ', '_') name FROM centers"
 
 city/centers.csv: citycenters.txt | city
 	echo x,y,name > $@
