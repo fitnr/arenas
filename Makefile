@@ -24,14 +24,17 @@ all:
 GEO = GENZ2014/shp/cb_2014_us_nation_5m.shp \
 	TIGER2015/UAC/tl_2015_us_uac10.shp \
 	TIGER2015/places.shp \
-	wiki/National_Hockey_League.geojson \
-	wiki/National_Football_League.geojson \
-	wiki/Major_League_Baseball.geojson \
-	wiki/National_Basketball_Association.geojson
+	wiki/National_Hockey_League.shp \
+	wiki/National_Football_League.shp \
+	wiki/Major_League_Baseball.shp \
+	wiki/National_Basketball_Association.shp
 
-svg/%.svg: city/bounds.csv $(GEO)
+svg/%.svg: city/bounds.csv $(GEO) | svg
 	grep $* $< | cut -d, -f2 | \
-	xargs -J % svgis draw $(SVGISFLAGS) --bounds % $(filter %.shp,$^) -o $@; \
+	xargs -J % svgis draw $(SVGISFLAGS) --bounds % -o $@ \
+	$(filter %.shp,$^)
+
+svg:; mkdir -p $@
 
 # Geocoding
 # set google key in vars
@@ -105,9 +108,9 @@ arenas: wiki/National_Hockey_League.geojson \
 	wiki/Major_League_Baseball.geojson \
 	wiki/National_Basketball_Association.geojson
 
-wiki/%.geojson: wiki/%.kml
+wiki/%.shp: wiki/%.kml
 	@rm -f $@
-	ogr2ogr -f GeoJSON $@ $<
+	ogr2ogr $@ $< -nln $*
 
 wiki/%.kml: | wiki
 	curl -Gso $@ $(KMLEXPORT) -d article=$* -d section=$($*_section)
