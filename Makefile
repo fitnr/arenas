@@ -8,9 +8,6 @@ STATES_WITH_ARENA = 04 06 06 08 11 12 \
 
 TSRS = -t_srs EPSG:4326
 
-# todo: major city outline
-# todo: urban areas
-# todo: city centers and boundaries
 # todo: radii in city center
 
 CITIES = $(shell cut -d, -f2 citycenters.txt | sed 's/ /_/g')
@@ -42,13 +39,16 @@ GOOGLEKEY ?=
 GOOGLEAPI = https://maps.googleapis.com/maps/api/geocode/json -d key=$(GOOGLEKEY)
 
 city/bounds.csv: city/envelope.shp
+	@rm -f $@
 	ogr2ogr -f CSV $@ $< -dialect sqlite \
 	-sql "SELECT name, MbrMinX(Geometry) || ' ' || \
 	MbrMinY(Geometry) || ' ' || MbrMaxX(Geometry) || ' ' || \
 	MbrMaxY(Geometry) bounds FROM envelope"
 
-city/envelope.shp: TIGER2015/UAC/tl_2015_us_uac10.shp city/centers.geojson
-	 ogr2ogr $@ $< $(TSRS) -dialect sqlite -sql "SELECT Envelope(a.Geometry) Geometry, a.GEOID10 GEOID10, a.NAME10 NAME10, b.name FROM '$(filter %.geojson,$^)'.OGRGeoJSON b, $(basename $(<F)) a WHERE Within(b.Geometry, a.Geometry)"
+city/envelope.shp: GENZ2014/shp/cb_2014_us_cbsa_20m.shp city/centers.geojson
+	 ogr2ogr $@ $< $(TSRS) -dialect sqlite \
+	 -sql "SELECT Envelope(a.Geometry) Geometry, a.GEOID, b.name \
+	 FROM '$(filter %.geojson,$^)'.OGRGeoJSON b, $(basename $(<F)) a WHERE Within(b.Geometry, a.Geometry)"
 
 city/centers.shp: city/centers.csv
 	ogr2ogr -f 'ESRI Shapefile' $@ $< \
@@ -76,22 +76,22 @@ TIGER2015/places.shp: $(foreach x,$(STATES_WITH_ARENA),TIGER2015/PLACE/tl_2015_$
 	done;
 
 TIGER2015/PLACE/tl_2015_%_place.shp: TIGER2015/PLACE/tl_2015_%_place.zip
-	ogr2ogr $@ /vsizip/$</$(@F) \
+	ogr2ogr -overwrite $@ /vsizip/$</$(@F) \
 	$(TSRS) -select GEOID,NAME -where "PCICBSA='Y'"
 
 TIGER2015/UAC/tl_2015_us_uac10.shp: TIGER2015/UAC/tl_2015_us_uac10.zip
-	ogr2ogr $@ /vsizip/$</$(@F) \
+	ogr2ogr -overwrite $@ /vsizip/$</$(@F) \
 	$(TSRS) -select GEOID10,NAME10
 
 TIGER2015/%.zip:
 	@mkdir -p $(@D)
 	curl -so $@ ftp://ftp2.census.gov/geo/tiger/$@
 
-GENZ2014/shp/cb_2014_us_nation_5m.shp: GENZ2014/shp/cb_2014_us_nation_5m.zip
+GENZ2014/shp/%.shp: GENZ2014/shp/%.zip
 	ogr2ogr $@ /vsizip/$</$(@F) $(TSRS)
 
-GENZ2014/shp/cb_2014_us_nation_5m.zip: | GENZ2014/shp
-	curl -o $@ -s http://www2.census.gov/geo/tiger/$@
+GENZ2014/shp/%.zip: | GENZ2014/shp
+	curl -so $@ http://www2.census.gov/geo/tiger/$@
 
 GENZ2014/shp:; mkdir -p $@
 
