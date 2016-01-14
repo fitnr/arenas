@@ -122,19 +122,15 @@ GENZ2014/shp/%.shp: GENZ2014/shp/%.zip
 can/provinces.shp: can/gpr_000b11a_e.zip
 	ogr2ogr $@ /vsizip/$</$(basename $(<F)).shp $(TSRS)
 
-can/cmaca.shp: can/gcma000a11a_e.zip
-	ogr2ogr $@ /vsizip/$</$(basename $(<F)).shp $(TSRS)
-
-can/places.shp: can/muni_on_gdf8_shp_eng.zip can/muni_qc_gdf8_shp_eng.zip can/local_area_boundary_shp.zip
-	ogr2ogr $@ /vsizip/$</GeoBase_MUNI_ON_1_0_eng.shp $(TSRS) -where "LOCALID IN ('6005', '20002')"
-	ogr2ogr $@ /vsizip/$(word 2,$^)/GeoBase_MUNI_QC_2_0_eng.shp $(TSRS) -update -append -where "LOCALID='66023'"
-	ogr2ogr $@ /vsizip/$(word 3,$^)/local_area_boundary.shp $(TSRS) -update -append \
-	-dialect sqlite -sql "SELECT ST_Union(Buffer(Geometry, 1.5)) Geometry FROM local_area_boundary"
+# Montreal, Ottawa, Toronto, Edmonton, Calgary, vancouver
+can/places.shp: can/lcsd000a15a_e.zip
+	ogr2ogr -overwrite $@ /vsizip/$</$(basename $(<F)).shp $(TSRS) \
+	-where "CSDUID IN ('2466023', '3506008', '3520005', '4811061', '4806016', '5915022')"
 
 can/local_area_boundary_shp.zip:
 	curl -so $@ ftp://webftp.vancouver.ca/OpenData/shape/$(@F)
 
-can/gpr_000b11a_e.zip can/gcma000a11a_e.zip can/lcsd000a15a_e.zip: | can
+can/gpr_000b11a_e.zip can/lcsd000a15a_e.zip: | can
 	curl -so $@ $(STATCAN)/$(@F)
 
 TIGER2015/%.zip GENZ2014/shp/%.zip:
