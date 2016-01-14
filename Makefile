@@ -72,7 +72,7 @@ city/centers.shp: city/centers.csv
 	ogr2ogr -overwrite -f 'ESRI Shapefile' $@ $< -s_srs EPSG:4326 $(TSRS) \
 	-dialect sqlite -sql "SELECT MakePoint(CAST(x as REAL), CAST(y as REAL)) Geometry, \
 	CAST(x as REAL) x, CAST(y as REAL) y, \
-	REPLACE(REPLACE(name, 'Old Toronto', 'Toronto'), ' ', '_') name FROM centers"
+	REPLACE(name, ' ', '_') name FROM centers"
 
 .SECONDARY: city/centers.csv
 city/centers.csv: citycenters.txt | city
@@ -82,9 +82,8 @@ city/centers.csv: citycenters.txt | city
 	jq -r '.results[0] | \
 		[(.geometry.location.lng), (.geometry.location.lat), \
 			 [(.address_components[] | select( .types | contains(["locality", "political"])) | .long_name )][0] \
-			 +" "+ \
-			 [(.address_components[] | select( .types | contains(["administrative_area_level_1"])) | .short_name )][0] \
-		] | @csv' >> $@
+		] | @csv' | \
+	sed 's/Old Toronto/Toronto/g' >> $@
 
 # Census
 .SECONDARY: GENZ2014/shp/cb_2014_us_state_5m.zip GENZ2014/shp/cb_2014_us_state_5m.shp
