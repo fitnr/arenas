@@ -1,3 +1,6 @@
+CENSUS = ftp://ftp2.census.gov/geo/tiger
+STATCAN = http://www12.statcan.gc.ca/census-recensement/2011/geo/bound-limit/files-fichiers
+OPENCAN = http://ftp2.cits.rncan.gc.ca/pub/geobase/official/muni/shp_eng
 KMLEXPORT = https://tools.wmflabs.org/kmlexport/
 
 STATES_WITH_ARENA = 04 06 06 08 11 12 \
@@ -15,8 +18,10 @@ all: $(addsuffix .svg,$(addprefix svg/,$(CITIES)))
 # Maps
 
 GEO = GENZ2014/shp/cb_2014_us_state_5m.shp \
+	can/provinces.shp \
 	TIGER2015/UAC/tl_2015_us_uac10.shp \
 	TIGER2015/places.shp \
+	can/places.shp \
 	wiki/National_Hockey_League.shp \
 	wiki/National_Football_League.shp \
 	wiki/Major_League_Baseball.shp \
@@ -95,8 +100,6 @@ city/centers.csv: citycenters.txt | city
 			 [(.address_components[] | select( .types | contains(["administrative_area_level_1"])) | .short_name )][0] \
 		] | @csv' >> $@
 
-city: ; mkdir -p $@
-
 # Census
 .SECONDARY: GENZ2014/shp/cb_2014_us_state_5m.zip GENZ2014/shp/cb_2014_us_state_5m.shp
 
@@ -113,17 +116,32 @@ TIGER2015/UAC/tl_2015_us_uac10.shp: TIGER2015/UAC/tl_2015_us_uac10.zip
 	ogr2ogr -overwrite $@ /vsizip/$</$(@F) \
 	$(TSRS) -select GEOID10,NAME10
 
-TIGER2015/%.zip:
-	@mkdir -p $(@D)
-	curl -so $@ ftp://ftp2.census.gov/geo/tiger/$@
-
 GENZ2014/shp/%.shp: GENZ2014/shp/%.zip
 	ogr2ogr $@ /vsizip/$</$(@F) $(TSRS)
 
-GENZ2014/shp/%.zip: | GENZ2014/shp
-	curl -so $@ http://www2.census.gov/geo/tiger/$@
+can/provinces.shp: can/gpr_000b11a_e.zip
+	ogr2ogr $@ /vsizip/$</$(basename $(<F)).shp $(TSRS)
 
-GENZ2014/shp:; mkdir -p $@
+can/cmaca.shp: can/gcma000a11a_e.zip
+	ogr2ogr $@ /vsizip/$</$(basename $(<F)).shp $(TSRS)
+
+can/places.shp: can/muni_on_gdf8_shp_eng.zip can/muni_qc_gdf8_shp_eng.zip can/local_area_boundary_shp.zip
+	ogr2ogr $@ /vsizip/$</GeoBase_MUNI_ON_1_0_eng.shp $(TSRS) -where "LOCALID IN ('6005', '20002')"
+	ogr2ogr $@ /vsizip/$(word 2,$^)/GeoBase_MUNI_QC_2_0_eng.shp $(TSRS) -update -append -where "LOCALID='66023'"
+	ogr2ogr $@ /vsizip/$(word 3,$^)/local_area_boundary.shp $(TSRS) -update -append \
+	-dialect sqlite -sql "SELECT ST_Union(Buffer(Geometry, 1.5)) Geometry FROM local_area_boundary"
+
+can/local_area_boundary_shp.zip:
+	curl -so $@ ftp://webftp.vancouver.ca/OpenData/shape/$(@F)
+
+can/gpr_000b11a_e.zip can/gcma000a11a_e.zip can/lcsd000a15a_e.zip: | can
+	curl -so $@ $(STATCAN)/$(@F)
+
+TIGER2015/%.zip GENZ2014/shp/%.zip:
+	@mkdir -p $(@D)
+	curl -so $@ $(CENSUS)/$@
+
+city can:; mkdir -p $@
 
 # Stadia
 
