@@ -13,7 +13,24 @@ TSRS = -t_srs EPSG:4326
 
 CITIES = $(shell cut -d, -f2 citycenters.txt | sed 's/ /_/g')
 
-all: $(addsuffix .svg,$(addprefix svg/,$(CITIES)))
+COMPLEX_CITIES = Dallas \
+	Fort_Worth \
+	Minneapolis \
+	Saint_Paul \
+	Oakland \
+	San_Jose \
+	San_Francisco \
+	Saint_Petersburg \
+	Tampa
+
+JOINED_CITIES = Dallas_Ft_Worth \
+	Minneapolis_St_Paul \
+	Bay_Area \
+	Tampa_Bay
+
+SIMPLE_CITIES = $(filter-out $(COMPLEX_CITIES),$(CITIES))
+
+all: $(addsuffix .svg,$(addprefix svg/,$(SIMPLE_CITIES) $(JOINED_CITIES)))
 
 # Maps
 
@@ -40,6 +57,32 @@ bounds/%: buffer/%.shp | bounds
 	grep -v bounds > $@
 
 # Buffers
+
+buffer/Bay_Area.shp: buffer/Oakland.shp buffer/San_Jose.shp buffer/San_Francisco.shp | buffer
+	ogr2ogr $@ $< -overwrite -dialect sqlite -sql "SELECT \
+	ST_union(c.Geometry, ST_union(a.Geometry, b.Geometry)) Geometry, mi \
+	FROM 'buffer/San_Jose.shp'.San_Jose a \
+	LEFT JOIN 'buffer/San_Francisco.shp'.San_Francisco b USING (mi) \
+	LEFT JOIN Oakland c USING (mi)"
+
+buffer/Dallas_Ft_Worth.shp: buffer/Dallas.shp buffer/Fort_Worth.shp | buffer
+	ogr2ogr $@ $< -overwrite -dialect sqlite -sql "SELECT \
+	ST_union(a.Geometry, b.Geometry) Geometry, mi \
+	FROM 'buffer/Fort_Worth.shp'.Fort_Worth a \
+	LEFT JOIN Dallas b USING (mi)"
+
+buffer/Minneapolis_St_Paul.shp: buffer/Minneapolis.shp buffer/Saint_Paul.shp | buffer
+	ogr2ogr $@ $< -overwrite -dialect sqlite -sql "SELECT \
+	ST_union(a.Geometry, b.Geometry) Geometry, mi \
+	FROM 'buffer/Saint_Paul.shp'.Saint_Paul a \
+	LEFT JOIN Minneapolis b USING (mi)"
+
+buffer/Tampa_Bay.shp: buffer/Tampa.shp buffer/Saint_Petersburg.shp | buffer
+	ogr2ogr $@ $< -overwrite -dialect sqlite -sql "SELECT \
+	ST_union(a.Geometry, b.Geometry) Geometry, mi \
+	FROM 'buffer/Saint_Petersburg.shp'.Saint_Petersburg a \
+	LEFT JOIN Tampa b USING (mi)"
+
 buffer/%.shp: buffer/%_utm.shp
 	ogr2ogr $@ $< $(TSRS) -overwrite -dialect sqlite -sql 'SELECT Buffer(Geometry, 48280.2) Geometry, 30 mi FROM "$(basename $(<F))"'
 	ogr2ogr $@ $< $(TSRS) -update -append -dialect sqlite -sql 'SELECT Buffer(Geometry, 40233.6) Geometry, 25 mi FROM "$(basename $(<F))"'
