@@ -155,9 +155,6 @@ can/places.shp: can/lcsd000a15a_e.zip
 	ogr2ogr -overwrite $@ /vsizip/$</$(basename $(<F)).shp $(TSRS) \
 	-where "CSDUID IN ('2466023', '3506008', '3520005', '4811061', '4806016', '5915022')"
 
-can/local_area_boundary_shp.zip:
-	curl -so $@ ftp://webftp.vancouver.ca/OpenData/shape/$(@F)
-
 can/gpr_000b11a_e.zip can/lcsd000a15a_e.zip: | can
 	curl -so $@ $(STATCAN)/$(@F)
 
