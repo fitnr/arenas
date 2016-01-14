@@ -93,7 +93,7 @@ city/centers.csv: citycenters.txt | city
 city: ; mkdir -p $@
 
 # Census
-.PRECIOUS: %.zip
+.SECONDARY: GENZ2014/shp/cb_2014_us_state_5m.zip GENZ2014/shp/cb_2014_us_state_5m.shp
 
 TIGER2015/places.shp: $(foreach x,$(STATES_WITH_ARENA),TIGER2015/PLACE/tl_2015_$x_place.shp)
 	for f in $^; do \
