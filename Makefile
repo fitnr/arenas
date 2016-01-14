@@ -36,26 +36,26 @@ bounds/%: buffer/%.shp | bounds
 
 # Buffers
 buffer/%.shp: buffer/%_30mi.shp buffer/%_25mi.shp buffer/%_20mi.shp buffer/%_15mi.shp buffer/%_10mi.shp
-	ogr2ogr -overwrite $@ $<
-	ogr2ogr -update $@ buffer/$*_25mi.shp -append
-	ogr2ogr -update $@ buffer/$*_20mi.shp -append
-	ogr2ogr -update $@ buffer/$*_15mi.shp -append
-	ogr2ogr -update $@ buffer/$*_10mi.shp -append
+	ogr2ogr -overwrite $@ $< $(TSRS)
+	ogr2ogr -update $@ buffer/$*_25mi.shp $(TSRS) -append
+	ogr2ogr -update $@ buffer/$*_20mi.shp $(TSRS) -append
+	ogr2ogr -update $@ buffer/$*_15mi.shp $(TSRS) -append
+	ogr2ogr -update $@ buffer/$*_10mi.shp $(TSRS) -append
 
 buffer/%_10mi.shp: buffer/%_0.shp
-	ogr2ogr -overwrite $@ $< $(TSRS) -dialect sqlite -sql 'SELECT Buffer(Geometry, 16093.4) Geometry, 10 mi FROM "$*_0"'
+	ogr2ogr -overwrite $@ $< -dialect sqlite -sql 'SELECT Buffer(Geometry, 16093.4) Geometry, 10 mi FROM "$*_0"'
 
 buffer/%_15mi.shp: buffer/%_0.shp
-	ogr2ogr -overwrite $@ $< $(TSRS) -dialect sqlite -sql 'SELECT Buffer(Geometry, 24140.2) Geometry, 15 mi FROM "$*_0"'
+	ogr2ogr -overwrite $@ $< -dialect sqlite -sql 'SELECT Buffer(Geometry, 24140.2) Geometry, 15 mi FROM "$*_0"'
 
 buffer/%_20mi.shp: buffer/%_0.shp
-	ogr2ogr -overwrite $@ $< $(TSRS) -dialect sqlite -sql 'SELECT Buffer(Geometry, 32186.9) Geometry, 20 mi FROM "$*_0"'
+	ogr2ogr -overwrite $@ $< -dialect sqlite -sql 'SELECT Buffer(Geometry, 32186.9) Geometry, 20 mi FROM "$*_0"'
 
 buffer/%_25mi.shp: buffer/%_0.shp
-	ogr2ogr -overwrite $@ $< $(TSRS) -dialect sqlite -sql 'SELECT Buffer(Geometry, 40233.6) Geometry, 25 mi FROM "$*_0"'
+	ogr2ogr -overwrite $@ $< -dialect sqlite -sql 'SELECT Buffer(Geometry, 40233.6) Geometry, 25 mi FROM "$*_0"'
 
 buffer/%_30mi.shp: buffer/%_0.shp
-	ogr2ogr -overwrite $@ $< $(TSRS) -dialect sqlite -sql 'SELECT Buffer(Geometry, 48280.2) Geometry, 30 mi FROM "$*_0"'
+	ogr2ogr -overwrite $@ $< -dialect sqlite -sql 'SELECT Buffer(Geometry, 48280.2) Geometry, 30 mi FROM "$*_0"'
 
 # Can't fucking quote in xargs properly WTF
 buffer/%_0.shp: buffer/%.utm city/centers.shp | buffer
