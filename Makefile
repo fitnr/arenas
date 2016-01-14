@@ -30,8 +30,34 @@ svg/%.svg: city/bounds.csv $(GEO) | svg
 	grep $* $< | cut -d, -f2 | \
 	xargs -J % svgis draw $(SVGISFLAGS) --bounds % -o $@ \
 	$(filter %.shp,$^)
+# Buffers
+buffer/%.shp: buffer/%_25mi.shp buffer/%_20mi.shp buffer/%_15mi.shp buffer/%_10mi.shp
+	ogr2ogr -overwrite $@ buffer/$*_25mi.shp -nln buffer 
+	ogr2ogr -update $@ buffer/$*_20mi.shp -append
+	ogr2ogr -update $@ buffer/$*_15mi.shp -append
+	ogr2ogr -update $@ buffer/$*_10mi.shp -append
 
-svg:; mkdir -p $@
+buffer/%_10mi.shp: buffer/%_0.shp
+	ogr2ogr -overwrite $@ $< $(TSRS) -dialect sqlite -sql 'SELECT Buffer(Geometry, 16093.4) Geometry, 10 mi FROM "$*_0"'
+
+buffer/%_15mi.shp: buffer/%_0.shp
+	ogr2ogr -overwrite $@ $< $(TSRS) -dialect sqlite -sql 'SELECT Buffer(Geometry, 24140.2) Geometry, 15 mi FROM "$*_0"'
+
+buffer/%_20mi.shp: buffer/%_0.shp
+	ogr2ogr -overwrite $@ $< $(TSRS) -dialect sqlite -sql 'SELECT Buffer(Geometry, 32186.9) Geometry, 20 mi FROM "$*_0"'
+
+buffer/%_25mi.shp: buffer/%_0.shp
+	ogr2ogr -overwrite $@ $< $(TSRS) -dialect sqlite -sql 'SELECT Buffer(Geometry, 40233.6) Geometry, 25 mi FROM "$*_0"'
+
+buffer/%_0.shp: proj/%.proj city/centers.shp | buffer
+	ogr2ogr -overwrite $@ city/centers.shp -where "name='$*'" -t_srs "$$(cat $<)"
+
+# Projections
+
+proj/%.proj: city/bounds.csv | proj
+	grep $* $< | cut -d, -f2 | xargs -J % svgis project -j utm % > $@
+
+buffer proj svg:; mkdir -p $@
 
 # Geocoding
 # set google key in vars
