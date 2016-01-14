@@ -103,8 +103,6 @@ $(addsuffix .utm,$(addprefix buffer/,$(CITIES))): buffer/%.utm: city/centers.csv
 	sed -E 's/,/ /g;s/(-?[0-9.]+) (-?[0-9.]+)/\1 \2 \1 \2/' | \
 	xargs svgis project -j utm > $@
 
-bounds buffer svg:; mkdir -p $@
-
 # Geocoding
 
 # set google key in vars
@@ -137,12 +135,10 @@ TIGER2015/places.shp: $(foreach x,$(STATES_WITH_ARENA),TIGER2015/PLACE/tl_2015_$
 	done;
 
 TIGER2015/PLACE/tl_2015_%_place.shp: TIGER2015/PLACE/tl_2015_%_place.zip
-	ogr2ogr -overwrite $@ /vsizip/$</$(@F) \
-	$(TSRS) -select GEOID,NAME -where "PCICBSA='Y'"
+	ogr2ogr -overwrite $@ /vsizip/$</$(@F) $(TSRS) -select GEOID,NAME -where "PCICBSA='Y'"
 
 TIGER2015/UAC/tl_2015_us_uac10.shp: TIGER2015/UAC/tl_2015_us_uac10.zip
-	ogr2ogr -overwrite $@ /vsizip/$</$(@F) \
-	$(TSRS) -select GEOID10,NAME10
+	ogr2ogr -overwrite $@ /vsizip/$</$(@F) $(TSRS) -select GEOID10,NAME10
 
 GENZ2014/shp/%.shp: GENZ2014/shp/%.zip
 	ogr2ogr $@ /vsizip/$</$(@F) $(TSRS)
@@ -158,11 +154,11 @@ can/places.shp: can/lcsd000a15a_e.zip
 can/gpr_000b11a_e.zip can/lcsd000a15a_e.zip: | can
 	curl -so $@ $(STATCAN)/$(@F)
 
-TIGER2015/%.zip GENZ2014/shp/%.zip:
-	@mkdir -p $(@D)
+.SECONDEXPANSION:
+TIGER2015/%.zip GENZ2014/shp/%.zip: | $$(@D)
 	curl -so $@ $(CENSUS)/$@
 
-city can:; mkdir -p $@
+TIGER2015/PLACE TIGER2015/UAC GENZ2014/shp city can bounds buffer svg:; mkdir -p $@
 
 # Stadia
 
