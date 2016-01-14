@@ -12,9 +12,7 @@ TSRS = -t_srs EPSG:4326
 
 CITIES = $(shell cut -d, -f2 citycenters.txt | sed 's/ /_/g')
 
-SVGISFLAGS = -x -f 100 -c styles.css -j local
-
-all: 
+all: $(addsuffix .svg,$(addprefix svg/,$(CITIES)))
 
 # Maps
 
@@ -26,10 +24,10 @@ GEO = GENZ2014/shp/cb_2014_us_state_5m.shp \
 	wiki/Major_League_Baseball.shp \
 	wiki/National_Basketball_Association.shp
 
-svg/%.svg: city/bounds.csv $(GEO) | svg
-	grep $* $< | cut -d, -f2 | \
-	xargs -J % svgis draw $(SVGISFLAGS) --bounds % -o $@ \
-	$(filter %.shp,$^)
+svg/%.svg: styles.css bounds/% $(GEO) buffer/%.shp | svg
+	xargs -J % svgis draw -j local -x -f 100 -c $< -p 100 --bounds % <bounds/$* \
+	$(filter %.shp,$^) -o $@
+
 # Buffers
 buffer/%.shp: buffer/%_25mi.shp buffer/%_20mi.shp buffer/%_15mi.shp buffer/%_10mi.shp
 	ogr2ogr -overwrite $@ buffer/$*_25mi.shp -nln buffer 
@@ -49,15 +47,15 @@ buffer/%_20mi.shp: buffer/%_0.shp
 buffer/%_25mi.shp: buffer/%_0.shp
 	ogr2ogr -overwrite $@ $< $(TSRS) -dialect sqlite -sql 'SELECT Buffer(Geometry, 40233.6) Geometry, 25 mi FROM "$*_0"'
 
-buffer/%_0.shp: proj/%.proj city/centers.shp | buffer
-	ogr2ogr -overwrite $@ city/centers.shp -where "name='$*'" -t_srs "$$(cat $<)"
+# Can't fucking quote in xargs properly WTF
+buffer/%_0.shp: bounds/% city/centers.shp | buffer
+	PROJ=$$(xargs -J % svgis project -j utm % <$<); \
+	ogr2ogr -overwrite $@ city/centers.shp -where "name='$*'" -t_srs "$${PROJ}"
 
-# Projections
+bounds/%: city/bounds.csv | bounds
+	grep $* $< | cut -d, -f2 > $@
 
-proj/%.proj: city/bounds.csv | proj
-	grep $* $< | cut -d, -f2 | xargs -J % svgis project -j utm % > $@
-
-buffer proj svg:; mkdir -p $@
+bounds buffer svg:; mkdir -p $@
 
 # Geocoding
 # set google key in vars
@@ -95,6 +93,7 @@ city/centers.csv: citycenters.txt | city
 city: ; mkdir -p $@
 
 # Census
+.PRECIOUS: %.zip
 
 TIGER2015/places.shp: $(foreach x,$(STATES_WITH_ARENA),TIGER2015/PLACE/tl_2015_$x_place.shp)
 	for f in $^; do \
