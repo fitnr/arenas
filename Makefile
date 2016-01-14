@@ -40,35 +40,21 @@ bounds/%: buffer/%.shp | bounds
 	grep -v bounds > $@
 
 # Buffers
-buffer/%.shp: buffer/%_30mi.shp buffer/%_25mi.shp buffer/%_20mi.shp buffer/%_15mi.shp buffer/%_10mi.shp
-	ogr2ogr -overwrite $@ $< $(TSRS)
-	ogr2ogr -update $@ buffer/$*_25mi.shp $(TSRS) -append
-	ogr2ogr -update $@ buffer/$*_20mi.shp $(TSRS) -append
-	ogr2ogr -update $@ buffer/$*_15mi.shp $(TSRS) -append
-	ogr2ogr -update $@ buffer/$*_10mi.shp $(TSRS) -append
-
-buffer/%_10mi.shp: buffer/%_0.shp
-	ogr2ogr -overwrite $@ $< -dialect sqlite -sql 'SELECT Buffer(Geometry, 16093.4) Geometry, 10 mi FROM "$*_0"'
-
-buffer/%_15mi.shp: buffer/%_0.shp
-	ogr2ogr -overwrite $@ $< -dialect sqlite -sql 'SELECT Buffer(Geometry, 24140.2) Geometry, 15 mi FROM "$*_0"'
-
-buffer/%_20mi.shp: buffer/%_0.shp
-	ogr2ogr -overwrite $@ $< -dialect sqlite -sql 'SELECT Buffer(Geometry, 32186.9) Geometry, 20 mi FROM "$*_0"'
-
-buffer/%_25mi.shp: buffer/%_0.shp
-	ogr2ogr -overwrite $@ $< -dialect sqlite -sql 'SELECT Buffer(Geometry, 40233.6) Geometry, 25 mi FROM "$*_0"'
-
-buffer/%_30mi.shp: buffer/%_0.shp
-	ogr2ogr -overwrite $@ $< -dialect sqlite -sql 'SELECT Buffer(Geometry, 48280.2) Geometry, 30 mi FROM "$*_0"'
+buffer/%.shp: buffer/%_utm.shp
+	ogr2ogr $@ $< $(TSRS) -overwrite -dialect sqlite -sql 'SELECT Buffer(Geometry, 48280.2) Geometry, 30 mi FROM "$(basename $(<F))"'
+	ogr2ogr $@ $< $(TSRS) -update -append -dialect sqlite -sql 'SELECT Buffer(Geometry, 40233.6) Geometry, 25 mi FROM "$(basename $(<F))"'
+	ogr2ogr $@ $< $(TSRS) -update -append -dialect sqlite -sql 'SELECT Buffer(Geometry, 32186.9) Geometry, 20 mi FROM "$(basename $(<F))"'
+	ogr2ogr $@ $< $(TSRS) -update -append -dialect sqlite -sql 'SELECT Buffer(Geometry, 24140.2) Geometry, 15 mi FROM "$(basename $(<F))"'
+	ogr2ogr $@ $< $(TSRS) -update -append -dialect sqlite -sql 'SELECT Buffer(Geometry, 16093.4) Geometry, 10 mi FROM "$(basename $(<F))"'
 
 # Can't fucking quote in xargs properly WTF
-buffer/%_0.shp: buffer/%.utm city/centers.shp | buffer
+# Point of this file is that it's in UTM so we can make proper circles
+buffer/%_utm.shp: buffer/%.utm city/centers.shp
 	ogr2ogr -overwrite $@ $(filter %.shp,$^) -where "name='$*'" -t_srs "$$(cat $<)"
 
 # Small file containing the UTM Proj.4 string.
 # Can't get xargs to work properly with ogr2ogr.
-$(addsuffix .utm,$(addprefix buffer/,$(CITIES))): buffer/%.utm: city/centers.csv
+$(addsuffix .utm,$(addprefix buffer/,$(CITIES))): buffer/%.utm: city/centers.csv | buffer
 	grep "$(subst _, ,$*)" $< | \
 	cut -d, -f1-2 | \
 	sed -E 's/,/ /g;s/(-?[0-9.]+) (-?[0-9.]+)/\1 \2 \1 \2/' | \
