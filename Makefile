@@ -8,8 +8,6 @@ STATES_WITH_ARENA = 04 06 06 08 11 12 \
 
 TSRS = -t_srs EPSG:4326
 
-# todo: radii in city center
-
 CITIES = $(shell cut -d, -f2 citycenters.txt | sed 's/ /_/g')
 
 all: $(addsuffix .svg,$(addprefix svg/,$(CITIES)))
@@ -25,16 +23,15 @@ GEO = GENZ2014/shp/cb_2014_us_state_5m.shp \
 	wiki/National_Basketball_Association.shp
 
 svg/%.svg: styles.css bounds/% $(GEO) buffer/%.shp | svg
-	xargs -J % svgis draw -j local -x -f 100 -c $< -p 100 --bounds % <bounds/$* \
+	xargs -J % svgis draw -j local -x -f 100 -c $< -p 100 --bounds % < bounds/$* \
 	$(filter %.shp,$^) -o $@
 
 # bounds
 bounds/%: buffer/%.shp | bounds
 	@rm -f $@
 	ogr2ogr -f CSV /dev/stdout $< -dialect sqlite \
-	-sql "SELECT MbrMinX(Geometry) || ' ' || \
-	MbrMinY(Geometry) || ' ' || MbrMaxX(Geometry) || ' ' || \
-	MbrMaxY(Geometry) bounds FROM $* WHERE mi=25" | \
+	-sql "SELECT MbrMinX(Geometry) || ' ' || MbrMinY(Geometry) || ' ' || \
+	MbrMaxX(Geometry) || ' ' || MbrMaxY(Geometry) bounds FROM $* WHERE mi=25" | \
 	grep -v bounds > $@
 
 # Buffers
@@ -73,15 +70,16 @@ buffer/%.center: city/centers.csv | buffer
 bounds buffer svg:; mkdir -p $@
 
 # Geocoding
+
 # set google key in vars
 GOOGLEKEY ?=
 GOOGLEAPI = https://maps.googleapis.com/maps/api/geocode/json -d key=$(GOOGLEKEY)
 
-
 city/centers.shp: city/centers.csv
-	ogr2ogr -overwrite -f 'ESRI Shapefile' $@ $< \
-	-s_srs EPSG:4326 $(TSRS) \
-	-dialect sqlite -sql "SELECT MakePoint(CAST(x as REAL), CAST(y as REAL)) Geometry, CAST(x as REAL) x, CAST(y as REAL) y, REPLACE(REPLACE(name, 'Old Toronto', 'Toronto'), ' ', '_') name FROM centers"
+	ogr2ogr -overwrite -f 'ESRI Shapefile' $@ $< -s_srs EPSG:4326 $(TSRS) \
+	-dialect sqlite -sql "SELECT MakePoint(CAST(x as REAL), CAST(y as REAL)) Geometry, \
+	CAST(x as REAL) x, CAST(y as REAL) y, \
+	REPLACE(REPLACE(name, 'Old Toronto', 'Toronto'), ' ', '_') name FROM centers"
 
 city/centers.csv: citycenters.txt | city
 	echo x,y,name > $@
