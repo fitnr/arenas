@@ -61,10 +61,10 @@ buffer/%_30mi.shp: buffer/%_0.shp
 	ogr2ogr -overwrite $@ $< $(TSRS) -dialect sqlite -sql 'SELECT Buffer(Geometry, 48280.2) Geometry, 30 mi FROM "$*_0"'
 
 # Can't fucking quote in xargs properly WTF
-buffer/%_0.shp: bounds/%.utm city/centers.shp | buffer
+buffer/%_0.shp: buffer/%.utm city/centers.shp | buffer
 	ogr2ogr -overwrite $@ city/centers.shp -where "name='$*'" -t_srs "$$(cat $<)"
 
-buffer/%.utm: buffer/%.center
+$(addsuffix .utm,$(addprefix buffer/,$(CITIES))): buffer/%.utm: buffer/%.center
 	svgis project -j utm $$(cat $<) $$(cat $<) > $@
 
 buffer/%.center: city/centers.csv | buffer
