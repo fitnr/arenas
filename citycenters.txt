@@ -33,6 +33,7 @@ Portland city hall,Portland,OR
 Raleigh city hall,Raleigh,NC
 Sacramento city hall,Sacramento,CA
 Salt Lake City hall,Salt Lake City,UT
+St. Petersburg City hall,Saint Petersburg,FL
 San Antonio city hall,San Antonio,TX
 San Diego city hall,San Diego,CA
 San Francisco city hall,San Francisco,CA
