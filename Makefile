@@ -59,13 +59,15 @@ buffer/%_30mi.shp: buffer/%_0.shp
 
 # Can't fucking quote in xargs properly WTF
 buffer/%_0.shp: buffer/%.utm city/centers.shp | buffer
-	ogr2ogr -overwrite $@ city/centers.shp -where "name='$*'" -t_srs "$$(cat $<)"
+	ogr2ogr -overwrite $@ $(filter %.shp,$^) -where "name='$*'" -t_srs "$$(cat $<)"
 
-$(addsuffix .utm,$(addprefix buffer/,$(CITIES))): buffer/%.utm: buffer/%.center
-	svgis project -j utm $$(cat $<) $$(cat $<) > $@
-
-buffer/%.center: city/centers.csv | buffer
-	grep "$(subst _, ,$*)" $< | cut -d, -f1-2 | sed 's/,/ /g' > $@
+# Small file containing the UTM Proj.4 string.
+# Can't get xargs to work properly with ogr2ogr.
+$(addsuffix .utm,$(addprefix buffer/,$(CITIES))): buffer/%.utm: city/centers.csv
+	grep "$(subst _, ,$*)" $< | \
+	cut -d, -f1-2 | \
+	sed -E 's/,/ /g;s/(-?[0-9.]+) (-?[0-9.]+)/\1 \2 \1 \2/' | \
+	xargs svgis project -j utm > $@
 
 bounds buffer svg:; mkdir -p $@
 
@@ -81,6 +83,7 @@ city/centers.shp: city/centers.csv
 	CAST(x as REAL) x, CAST(y as REAL) y, \
 	REPLACE(REPLACE(name, 'Old Toronto', 'Toronto'), ' ', '_') name FROM centers"
 
+.SECONDARY: city/centers.csv
 city/centers.csv: citycenters.txt | city
 	echo x,y,name > $@
 	sed 's/ /%20/g;s/,/%2C/g' $< | \
