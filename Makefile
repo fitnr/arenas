@@ -28,9 +28,19 @@ svg/%.svg: styles.css bounds/% $(GEO) buffer/%.shp | svg
 	xargs -J % svgis draw -j local -x -f 100 -c $< -p 100 --bounds % <bounds/$* \
 	$(filter %.shp,$^) -o $@
 
+# bounds
+bounds/%: buffer/%.shp | bounds
+	@rm -f $@
+	ogr2ogr -f CSV /dev/stdout $< -dialect sqlite \
+	-sql "SELECT MbrMinX(Geometry) || ' ' || \
+	MbrMinY(Geometry) || ' ' || MbrMaxX(Geometry) || ' ' || \
+	MbrMaxY(Geometry) bounds FROM $* WHERE mi=25" | \
+	grep -v bounds > $@
+
 # Buffers
-buffer/%.shp: buffer/%_25mi.shp buffer/%_20mi.shp buffer/%_15mi.shp buffer/%_10mi.shp
-	ogr2ogr -overwrite $@ buffer/$*_25mi.shp -nln buffer 
+buffer/%.shp: buffer/%_30mi.shp buffer/%_25mi.shp buffer/%_20mi.shp buffer/%_15mi.shp buffer/%_10mi.shp
+	ogr2ogr -overwrite $@ $<
+	ogr2ogr -update $@ buffer/$*_25mi.shp -append
 	ogr2ogr -update $@ buffer/$*_20mi.shp -append
 	ogr2ogr -update $@ buffer/$*_15mi.shp -append
 	ogr2ogr -update $@ buffer/$*_10mi.shp -append
@@ -47,13 +57,18 @@ buffer/%_20mi.shp: buffer/%_0.shp
 buffer/%_25mi.shp: buffer/%_0.shp
 	ogr2ogr -overwrite $@ $< $(TSRS) -dialect sqlite -sql 'SELECT Buffer(Geometry, 40233.6) Geometry, 25 mi FROM "$*_0"'
 
-# Can't fucking quote in xargs properly WTF
-buffer/%_0.shp: bounds/% city/centers.shp | buffer
-	PROJ=$$(xargs -J % svgis project -j utm % <$<); \
-	ogr2ogr -overwrite $@ city/centers.shp -where "name='$*'" -t_srs "$${PROJ}"
+buffer/%_30mi.shp: buffer/%_0.shp
+	ogr2ogr -overwrite $@ $< $(TSRS) -dialect sqlite -sql 'SELECT Buffer(Geometry, 48280.2) Geometry, 30 mi FROM "$*_0"'
 
-bounds/%: city/bounds.csv | bounds
-	grep $* $< | cut -d, -f2 > $@
+# Can't fucking quote in xargs properly WTF
+buffer/%_0.shp: bounds/%.utm city/centers.shp | buffer
+	ogr2ogr -overwrite $@ city/centers.shp -where "name='$*'" -t_srs "$$(cat $<)"
+
+buffer/%.utm: buffer/%.center
+	svgis project -j utm $$(cat $<) $$(cat $<) > $@
+
+buffer/%.center: city/centers.csv | buffer
+	grep "$(subst _, ,$*)" $< | cut -d, -f1-2 | sed 's/,/ /g' > $@
 
 bounds buffer svg:; mkdir -p $@
 
@@ -62,17 +77,6 @@ bounds buffer svg:; mkdir -p $@
 GOOGLEKEY ?=
 GOOGLEAPI = https://maps.googleapis.com/maps/api/geocode/json -d key=$(GOOGLEKEY)
 
-city/bounds.csv: city/envelope.shp
-	@rm -f $@
-	ogr2ogr -f CSV $@ $< -dialect sqlite \
-	-sql "SELECT name, MbrMinX(Geometry) || ' ' || \
-	MbrMinY(Geometry) || ' ' || MbrMaxX(Geometry) || ' ' || \
-	MbrMaxY(Geometry) bounds FROM envelope"
-
-city/envelope.shp: GENZ2014/shp/cb_2014_us_cbsa_20m.shp city/centers.shp
-	 ogr2ogr -overwrite $@ $< $(TSRS) -dialect sqlite \
-	 -sql "SELECT Envelope(a.Geometry) Geometry, a.GEOID, b.name \
-	 FROM 'city/centers.shp'.centers b, $(basename $(<F)) a WHERE Within(b.Geometry, a.Geometry)"
 
 city/centers.shp: city/centers.csv
 	ogr2ogr -overwrite -f 'ESRI Shapefile' $@ $< \
