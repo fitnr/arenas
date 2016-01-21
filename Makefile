@@ -48,7 +48,7 @@ GEO = GENZ2014/shp/cb_2014_us_state_5m.shp \
 	wiki/National_Basketball_Association.shp
 
 svg/%.svg: styles.css bounds/% $(GEO) buffer/%.shp | svg
-	xargs -J % svgis draw -j local -xl -f 100 -c $< -p 100 --class-fields mi --bounds % < bounds/$* \
+	xargs -J % svgis draw -j local -xl -f 100 -c $< -p 100 -a mi -s 0.5 --bounds % < bounds/$* \
 	$(filter %.shp,$^) -o $@
 
 # bounds
