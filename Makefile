@@ -30,6 +30,8 @@ JOINED_CITIES = Dallas_Ft_Worth \
 
 SIMPLE_CITIES = $(filter-out $(COMPLEX_CITIES),$(CITIES))
 
+.SECONDARY:
+
 all: $(addsuffix .svg,$(addprefix svg/,$(SIMPLE_CITIES) $(JOINED_CITIES)))
 
 # Maps
@@ -116,7 +118,6 @@ city/centers.shp: city/centers.csv
 	CAST(x as REAL) x, CAST(y as REAL) y, \
 	REPLACE(name, ' ', '_') name FROM centers"
 
-.SECONDARY: city/centers.csv
 city/centers.csv: citycenters.txt | city
 	echo x,y,name > $@
 	sed 's/ /%20/g;s/,/%2C/g' $< | \
@@ -128,8 +129,6 @@ city/centers.csv: citycenters.txt | city
 	sed 's/Old Toronto/Toronto/g' >> $@
 
 # Census
-.INTERMEDIATE:
-
 TIGER2014/prisecroads.shp: $(foreach x,$(STATES_WITH_ARENA),TIGER2014/PRISECROADS/tl_2014_$x_prisecroads.shp)
 	for f in $^; do \
 		ogr2ogr -update -append -nlt LINESTRING $@ $$f; \
