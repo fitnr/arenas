@@ -7,6 +7,10 @@
     fill: #999;
     stroke: none;
 }
+.prisecroads {
+    stroke: white;
+    stroke-width: 0.5px;
+}
 .places {
     fill: none;
     stroke-width: 1px;

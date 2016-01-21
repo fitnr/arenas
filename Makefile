@@ -5,7 +5,7 @@ KMLEXPORT = https://tools.wmflabs.org/kmlexport/
 
 STATES_WITH_ARENA = 04 06 06 08 11 12 \
 	13 17 18 20 22 \
-	24 25 26 27 29 \
+	24 25 26 27 29 34 \
 	36 37 39 40 41 \
 	42 47 48 49 53 55
 
@@ -39,6 +39,7 @@ GEO = GENZ2014/shp/cb_2014_us_state_5m.shp \
 	TIGER2015/UAC/tl_2015_us_uac10.shp \
 	TIGER2015/places.shp \
 	can/places.shp \
+	TIGER2014/prisecroads.shp \
 	wiki/National_Hockey_League.shp \
 	wiki/National_Football_League.shp \
 	wiki/Major_League_Baseball.shp \
@@ -127,11 +128,19 @@ city/centers.csv: citycenters.txt | city
 	sed 's/Old Toronto/Toronto/g' >> $@
 
 # Census
-.SECONDARY: GENZ2014/shp/cb_2014_us_state_5m.zip GENZ2014/shp/cb_2014_us_state_5m.shp
+.INTERMEDIATE:
+
+TIGER2014/prisecroads.shp: $(foreach x,$(STATES_WITH_ARENA),TIGER2014/PRISECROADS/tl_2014_$x_prisecroads.shp)
+	for f in $^; do \
+		ogr2ogr -update -append -nlt LINESTRING $@ $$f; \
+	done;
+
+TIGER2014/PRISECROADS/tl_2014_%_prisecroads.shp: TIGER2014/PRISECROADS/tl_2014_%_prisecroads.zip | TIGER2014/PRISECROADS
+	ogr2ogr -overwrite $@ /vsizip/$</$(@F) $(TSRS) -where "MTFCC='S1100'"
 
 TIGER2015/places.shp: $(foreach x,$(STATES_WITH_ARENA),TIGER2015/PLACE/tl_2015_$x_place.shp)
 	for f in $^; do \
-		ogr2ogr -update -append $@ $$f; \
+		ogr2ogr -update -append -nlt POLYGON $@ $$f; \
 	done;
 
 TIGER2015/PLACE/tl_2015_%_place.shp: TIGER2015/PLACE/tl_2015_%_place.zip
@@ -155,10 +164,10 @@ can/gpr_000b11a_e.zip can/lcsd000a15a_e.zip: | can
 	curl -so $@ $(STATCAN)/$(@F)
 
 .SECONDEXPANSION:
-TIGER2015/%.zip GENZ2014/shp/%.zip: | $$(@D)
+TIGER2014/%.zip TIGER2015/%.zip GENZ2014/shp/%.zip: | $$(@D)
 	curl -so $@ $(CENSUS)/$@
 
-TIGER2015/PLACE TIGER2015/UAC GENZ2014/shp city can bounds buffer svg:; mkdir -p $@
+TIGER2014/PRISECROADS TIGER2015/PLACE TIGER2015/UAC GENZ2014/shp city can bounds buffer svg:; mkdir -p $@
 
 # Stadia
 
