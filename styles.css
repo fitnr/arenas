@@ -18,7 +18,11 @@
 }
 circle {
     stroke-width: 6px;
-    r: 25
+    r: 50
+}
+.ring_y {
+    stroke-width: 0.5px;
+    color: #111;
 }
 .National_Hockey_League {
     stroke: darkcyan;
