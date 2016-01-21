@@ -39,7 +39,7 @@ San Diego city hall,San Diego,CA
 San Francisco city hall,San Francisco,CA
 San Jose city hall,San Jose,CA
 Seattle city hall,Seattle,WA
-St. Louis city hall,Saint Louis,MO
+St. Louis city hall,St. Louis,MO
 St. Paul city hall,Saint Paul,MN
 Tampa city hall,Tampa,FL
 Toronto city hall,Toronto,ON
