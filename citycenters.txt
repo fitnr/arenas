@@ -4,11 +4,11 @@ Boston city hall,Boston,MA
 Buffalo City Hall,Buffalo,NY
 Calgary city hall,Calgary,AB
 Chicago city hall,Chicago,IL
-Cincinnati city hall,Cincinnati,OH
+801 Plum St,Cincinnati,OH
 601 Lakeside Avenue East,Cleveland,OH
 Dallas city hall,Dallas,TX
 Denver city hall,Denver,CO
-Detroit city hall,Detroit,MI
+1570 Woodward Ave,Detroit,MI
 Edmonton city hall,Edmonton,AB
 Fort Worth City Hall,Fort Worth,TX
 Grand Central Terminal,Manhattan,NY
@@ -18,28 +18,28 @@ Indianapolis city hall,Indianapolis,IN
 333 N Laura St,Jacksonville,FL
 Kansas City City Hall,Kansas City,MO
 Los Angeles city hall,Los Angeles,CA
-Miami city hall,Miami,FL
+111 NW 1st St,Miami,FL
 Milwaukee city hall,Milwaukee,WI
 Minneapolis city hall,Minneapolis,MN
 Montreal City Hall,Montreal,QC
-Nashville City Hall,Nashville,TN
+615 Church Street,Nashville,TN
 Oakland city hall,Oakland,CA
-Oklahoma City city hall,Oklahoma City,OK
+321 Park Ave,Oklahoma City,OK
 Ottawa city hall,Ottawa,ON
 Philadelphia city hall,Philadelphia,PA
 Phoenix city hall,Phoenix,AZ
-Pittsburgh city hall,Pittsburgh,PA
+414 Grant St,Pittsburgh,PA
 Portland city hall,Portland,OR
 Raleigh city hall,Raleigh,NC
-Sacramento city hall,Sacramento,CA
+1315 10th St,Sacramento,CA
 Salt Lake City hall,Salt Lake City,UT
 St. Petersburg City hall,Saint Petersburg,FL
-San Antonio city hall,San Antonio,TX
-San Diego city hall,San Diego,CA
-San Francisco city hall,San Francisco,CA
+Military Plaza,San Antonio,TX
+220 W Broadway,San Diego,CA
+540 Van Ness Avenue,San Francisco,CA
 San Jose city hall,San Jose,CA
 Seattle city hall,Seattle,WA
-St. Louis city hall,St. Louis,MO
+1301 Olive St,St. Louis,MO
 St. Paul city hall,Saint Paul,MN
 Tampa city hall,Tampa,FL
 Toronto city hall,Toronto,ON
