@@ -56,7 +56,7 @@ svg/%.svg: styles.css bounds/% $(GEO) buffer/%.shp | svg
 # bounds
 bounds/%: buffer/%.shp | bounds
 	@rm -f $@
-	ogr2ogr -f CSV /dev/stdout $< -dialect sqlite \
+	ogr2ogr -f CSV /dev/stdout $(<D) -dialect sqlite \
 	-sql "SELECT MbrMinX(Geometry) || ' ' || MbrMinY(Geometry) || ' ' || \
 	MbrMaxX(Geometry) || ' ' || MbrMaxY(Geometry) bounds FROM "'"$*"'" WHERE mi=30" | \
 	grep -v bounds > $@
@@ -89,11 +89,9 @@ buffer/Tampa_Bay.shp: buffer/Tampa.shp buffer/Saint_Petersburg.shp | buffer
 	LEFT JOIN Tampa b USING (mi)"
 
 buffer/%.shp: buffer/%_utm.shp
-	ogr2ogr $@ $< $(TSRS) -overwrite -dialect sqlite -sql 'SELECT Buffer(Geometry, 48280.2) Geometry, 30 mi, 'y' ring FROM "$(basename $(<F))"'
-	ogr2ogr $@ $< $(TSRS) -update -append -dialect sqlite -sql 'SELECT Buffer(Geometry, 40233.6) Geometry, 25 mi, 'y' ring FROM "$(basename $(<F))"'
-	ogr2ogr $@ $< $(TSRS) -update -append -dialect sqlite -sql 'SELECT Buffer(Geometry, 32186.9) Geometry, 20 mi, 'y' ring FROM "$(basename $(<F))"'
-	ogr2ogr $@ $< $(TSRS) -update -append -dialect sqlite -sql 'SELECT Buffer(Geometry, 24140.2) Geometry, 15 mi, 'y' ring FROM "$(basename $(<F))"'
-	ogr2ogr $@ $< $(TSRS) -update -append -dialect sqlite -sql 'SELECT Buffer(Geometry, 16093.4) Geometry, 10 mi, 'y' ring FROM "$(basename $(<F))"'
+	ogr2ogr $@ $< $(TSRS) -overwrite -dialect sqlite \
+		-sql 'WITH RECURSIVE cnt(mi) AS (SELECT 10 UNION ALL SELECT mi+5 FROM cnt LIMIT 5) \
+		SELECT Buffer(Geometry, mi * 1609.34) Geometry, mi, 'y' ring FROM "$(basename $(<F))", cnt'
 
 # Can't fucking quote in xargs properly WTF
 # Point of this file is that it's in UTM so we can make proper circles
