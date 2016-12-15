@@ -50,7 +50,7 @@ GEO = GENZ2014/shp/cb_2014_us_state_5m.shp \
 	$(ARENAS)
 
 svg/%.svg: styles.css bounds/% $(GEO) buffer/%.shp | svg
-	xargs -J % svgis draw -j local -xl -f 100 -c $< -p 100 -a mi -s 0.5 --bounds % < bounds/$* \
+	xargs -J % svgis draw -j local -xl -f 100 -c $< -p 100 -a mi -s 50 --bounds % < bounds/$* \
 	$(filter %.shp,$^) -o $@
 
 # bounds
@@ -104,7 +104,7 @@ $(addsuffix .utm,$(addprefix buffer/,$(CITIES))): buffer/%.utm: city/centers.csv
 	grep "$(subst _, ,$*)" $< | \
 	cut -d, -f1-2 | \
 	sed -E 's/,/ /g;s/(-?[0-9.]+) (-?[0-9.]+)/\1 \2 \1 \2/' | \
-	xargs svgis project -j utm > $@
+	xargs svgis project -m utm -- > $@
 
 # Geocoding
 
