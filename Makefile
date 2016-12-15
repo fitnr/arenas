@@ -51,7 +51,7 @@ GEO = GENZ2014/shp/cb_2014_us_state_5m.shp \
 
 svg/%.svg: styles.css bounds/% $(GEO) buffer/%.shp | svg
 	xargs -J % svgis draw -j local -xl -f 100 -c $< -p 100 -a mi -s 50 --bounds % < bounds/$* \
-	$(filter %.shp,$^) -o $@
+	$(filter %.geojson %.shp,$^) -o $@
 
 # bounds
 bounds/%: buffer/%.shp | bounds
