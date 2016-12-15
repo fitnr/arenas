@@ -181,11 +181,11 @@ arenas: wiki/National_Hockey_League.geojson \
 	wiki/Major_League_Baseball.geojson \
 	wiki/National_Basketball_Association.geojson
 
-wiki/%.shp: wiki/%.kml
+wiki/%.geojson: kml/%.kml | wiki
 	@rm -f $@
-	ogr2ogr $@ $< -nln $*
+	ogr2ogr $@ $< -f GeoJSON -nln $*
 
-wiki/%.kml: | wiki
+kml/%.kml: | kml
 	curl -Gso $@ $(KMLEXPORT) -d article=$* -d section=$($*_section)
 
-wiki: ; mkdir -p $@
+kml wiki: ; mkdir -p $@
