@@ -36,16 +36,18 @@ all: $(addsuffix .svg,$(addprefix svg/,$(SIMPLE_CITIES) $(JOINED_CITIES)))
 
 # Maps
 
+ARENAS = wiki/National_Hockey_League.geojson \
+	wiki/National_Football_League.geojson \
+	wiki/Major_League_Baseball.geojson \
+	wiki/National_Basketball_Association.geojson
+
 GEO = GENZ2014/shp/cb_2014_us_state_5m.shp \
 	can/provinces.shp \
 	TIGER2015/UAC/tl_2015_us_uac10.shp \
 	TIGER2015/places.shp \
 	can/places.shp \
 	TIGER2014/prisecroads.shp \
-	wiki/National_Hockey_League.shp \
-	wiki/National_Football_League.shp \
-	wiki/Major_League_Baseball.shp \
-	wiki/National_Basketball_Association.shp
+	$(ARENAS)
 
 svg/%.svg: styles.css bounds/% $(GEO) buffer/%.shp | svg
 	xargs -J % svgis draw -j local -xl -f 100 -c $< -p 100 -a mi -s 0.5 --bounds % < bounds/$* \
@@ -95,8 +97,8 @@ buffer/%.shp: buffer/%_utm.shp
 
 # Can't fucking quote in xargs properly WTF
 # Point of this file is that it's in UTM so we can make proper circles
-buffer/%_utm.shp: buffer/%.utm city/centers.shp
-	ogr2ogr -overwrite $@ $(filter %.shp,$^) -where "name='$*'" -t_srs "$$(cat $<)"
+buffer/%_utm.shp: buffer/%.utm city/centers.geojson
+	ogr2ogr -overwrite $@ $(filter %.geojson,$^) -where "name='$*'" -t_srs "$$(cat $<)"
 
 # Small file containing the UTM Proj.4 string.
 # Can't get xargs to work properly with ogr2ogr.
@@ -112,8 +114,8 @@ $(addsuffix .utm,$(addprefix buffer/,$(CITIES))): buffer/%.utm: city/centers.csv
 GOOGLEKEY ?=
 GOOGLEAPI = https://maps.googleapis.com/maps/api/geocode/json -d key=$(GOOGLEKEY)
 
-city/centers.shp: city/centers.csv
-	ogr2ogr -overwrite -f 'ESRI Shapefile' $@ $< -s_srs EPSG:4326 $(TSRS) \
+city/centers.geojson: city/centers.csv
+	ogr2ogr $@ $< -overwrite -f GeoJSON -s_srs EPSG:4326 $(TSRS) \
 	-dialect sqlite -sql "SELECT MakePoint(CAST(x as REAL), CAST(y as REAL)) Geometry, \
 	CAST(x as REAL) x, CAST(y as REAL) y, \
 	REPLACE(name, ' ', '_') name FROM centers"
@@ -176,10 +178,7 @@ Major_League_Baseball_section = Current_teams
 National_Basketball_Association_section = Teams
 
 .PHONY: arenas
-arenas: wiki/National_Hockey_League.geojson \
-	wiki/National_Football_League.geojson \
-	wiki/Major_League_Baseball.geojson \
-	wiki/National_Basketball_Association.geojson
+arenas: $(ARENAS)
 
 wiki/%.geojson: kml/%.kml | wiki
 	@rm -f $@
