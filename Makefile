@@ -36,7 +36,7 @@ all: $(addsuffix .svg,$(addprefix svg/,$(SIMPLE_CITIES) $(JOINED_CITIES)))
 
 # Maps
 
-ARENAS = wiki/National_Hockey_League.geojson \
+ARENAS = wiki/List_of_National_Hockey_League_arenas.geojson \
 	wiki/National_Football_League.geojson \
 	wiki/Major_League_Baseball.geojson \
 	wiki/National_Basketball_Association.geojson
@@ -170,9 +170,9 @@ TIGER2014/PRISECROADS TIGER2015/PLACE TIGER2015/UAC GENZ2014/shp city can bounds
 
 # Stadia
 
-National_Hockey_League_section = List_of_teams
-National_Football_League_section = Clubs
-Major_League_Baseball_section = Current_teams
+National_Hockey_League_section = Teams
+List_of_National_Hockey_League_arenas_section = Current_arenas
+Major_League_Baseball_section = Teams
 National_Basketball_Association_section = Teams
 
 .PHONY: arenas
