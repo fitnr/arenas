@@ -112,13 +112,14 @@ $(addsuffix .utm,$(addprefix buffer/,$(CITIES))): buffer/%.utm: city/centers.csv
 GOOGLEKEY ?=
 GOOGLEAPI = https://maps.googleapis.com/maps/api/geocode/json -d key=$(GOOGLEKEY)
 
-city/centers.geojson: city/centers.csv
-	ogr2ogr $@ $< -overwrite -f GeoJSON -s_srs EPSG:4326 $(TSRS) \
+city/centers.geojson: citycenters.csv
+	@rm -f $@
+	ogr2ogr $@ $< -f GeoJSON -s_srs EPSG:4326 $(TSRS) \
 	-dialect sqlite -sql "SELECT MakePoint(CAST(x as REAL), CAST(y as REAL)) Geometry, \
 	CAST(x as REAL) x, CAST(y as REAL) y, \
-	REPLACE(name, ' ', '_') name FROM centers"
+	REPLACE(name, ' ', '_') name FROM $(basename $(<F))"
 
-city/centers.csv: citycenters.txt | city
+citycenters.csv: citycenters.txt | city
 	echo x,y,name > $@
 	sed 's/ /%20/g;s/,/%2C/g' $< | \
 	xargs -I% curl -Gs $(GOOGLEAPI) -d address=% | \
@@ -126,7 +127,7 @@ city/centers.csv: citycenters.txt | city
 		[(.geometry.location.lng), (.geometry.location.lat), \
 			 [(.address_components[] | select( .types | contains(["locality", "political"])) | .long_name )][0] \
 		] | @csv' | \
-	sed 's/Old Toronto/Toronto/g' >> $@
+	sed 's/Old Toronto/Toronto/g; s/Ville-Marie/Montreal/g' >> $@
 
 # Census
 TIGER2014/prisecroads.shp: $(foreach x,$(STATES_WITH_ARENA),TIGER2014/PRISECROADS/tl_2014_$x_prisecroads.shp)
