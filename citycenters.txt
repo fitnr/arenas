@@ -1,5 +1,5 @@
 Atlanta city hall,Atlanta,GA
-Baltimore city hall,Baltimore,MD
+100 North Holliday Street,Baltimore,MD
 Boston city hall,Boston,MA
 Buffalo City Hall,Buffalo,NY
 Calgary city hall,Calgary,AB

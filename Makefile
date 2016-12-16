@@ -157,7 +157,7 @@ citycenters.csv: citycenters.txt | city
 		[(.geometry.location.lng), (.geometry.location.lat), \
 			 [(.address_components[] | select( .types | contains(["locality", "political"])) | .long_name )][0] \
 		] | @csv' | \
-	sed 's/Old Toronto/Toronto/g; s/Ville-Marie/Montreal/g' >> $@
+	sed 's/Old Toronto/Toronto/g; s/Ville-Marie/Montreal/g; s/St. /St /g; s/Manhattan/New York/g' >> $@
 
 # Census
 TIGER2014/prisecroads.shp: $(foreach x,$(STATES_WITH_ARENA),TIGER2014/PRISECROADS/tl_2014_$x_prisecroads.shp)
