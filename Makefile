@@ -66,24 +66,27 @@ city/%/arenas.shp: city/%/bufferwgs84.shp $(ARENAS)
 	ogr2ogr -update -append $@ wiki/National_Basketball_Association.geojson $(CLIP) \
 		-sql "SELECT Name, 'nba' league FROM OGRGeoJSON"
 
-city/%/roads.shp: TIGER2014/prisecroads.shp city/%/bufferwgs84.shp | city/%
+city/%/roads.shp: TIGER2016/prisecroads.shp city/%/bufferwgs84.shp | city/%
 	ogr2ogr $@ $< -overwrite $(CLIP) -nlt LINESTRING -select FULLNAME
 
-city/%/places.shp: TIGER2015/places.shp can/places.shp city/%/bufferwgs84.shp | city/%
-	ogr2ogr $@ $< -overwrite $(CLIP) -nlt POLYGON -select NAME
+city/%/water.shp: TIGER2016/water.shp city/%/bufferwgs84.shp | city/%
+	ogr2ogr $@ $< -overwrite $(CLIP) -nlt POLYGON
+
+city/%/places.shp: GENZ2015/places.shp can/places.shp city/%/bufferwgs84.shp | city/%
+	ogr2ogr $@ $< -overwrite $(CLIP) -nlt POLYGON
 	ogr2ogr $@ can places -update -append $(CLIP)
 
-city/%/urban.shp: TIGER2015/UAC/tl_2015_us_uac10.shp city/%/bufferwgs84.shp | city/%
-	ogr2ogr $@ $< -overwrite -nlt POLYGON $(CLIP) -select NAME10
+city/%/urban.shp: GENZ2015/shp/cb_2015_us_ua10_500k.zip city/%/bufferwgs84.shp | city/%
+	ogr2ogr $@ /vsizip/$</$(basename $(<F)).shp -overwrite -nlt POLYGON $(TSRS) $(CLIP) -select GEOID10,NAME10
 
-city/%/states.shp: GENZ2014/shp/cb_2014_us_state_5m.shp can/provinces.shp city/%/bufferwgs84.shp | city/%
-	ogr2ogr $@ $< -overwrite -nlt POLYGON $(CLIP) -select NAME
+city/%/states.shp: GENZ2015/shp/cb_2015_us_state_500k.zip can/provinces.shp city/%/bufferwgs84.shp | city/%
+	ogr2ogr $@ /vsizip/$</$(basename $(<F)).shp -overwrite -nlt POLYGON $(TSRS) $(CLIP) -select GEOID,NAME
 	ogr2ogr $@ can provinces -update -append $(CLIP)
 
 # Buffers
 
 city/%/bufferwgs84.shp: city/%/buffer.shp
-	ogr2ogr $@ $< -t_srs EPSG:4326 -where mi=30
+	ogr2ogr $@ $< $(TSRS) -where mi=30
 
 city/Bay_Area/buffer.shp: $(foreach x,Oakland San_Jose San_Francisco,city/$x/buffer.shp) | city/Bay_Area
 	ogr2ogr $@ $(<D) -overwrite -dialect sqlite -sql "SELECT \
@@ -160,27 +163,19 @@ citycenters.csv: citycenters.txt | city
 	sed 's/Old Toronto/Toronto/g; s/Ville-Marie/Montreal/g; s/St. /St /g; s/Manhattan/New York/g' >> $@
 
 # Census
-TIGER2014/prisecroads.shp: $(foreach x,$(STATES_WITH_ARENA),TIGER2014/PRISECROADS/tl_2014_$x_prisecroads.shp)
-	for f in $^; do \
-		ogr2ogr -update -append -nlt LINESTRING $@ $$f; \
+TIGER2016/prisecroads.shp: $(foreach x,$(STATES_WITH_ARENA),TIGER2016/PRISECROADS/tl_2014_$x_prisecroads.zip)
+	@rm -f $@
+	for f in $(basename $(^F)); do \
+		ogr2ogr $@ /vsizip/$$f.zip $$f -update -append -nlt LINESTRING $(TSRS) -where "MTFCC='S1100'"; \
 	done;
 
-TIGER2014/PRISECROADS/tl_2014_%_prisecroads.shp: TIGER2014/PRISECROADS/tl_2014_%_prisecroads.zip | TIGER2014/PRISECROADS
-	ogr2ogr -overwrite $@ /vsizip/$</$(@F) $(TSRS) -where "MTFCC='S1100'"
+TIGER2016/water.shp: $(foreach x,$(STATES_WITH_ARENA),TIGER2016/AREAWATER/tl_2016_$x_areawater.zip)
 
-TIGER2015/places.shp: $(foreach x,$(STATES_WITH_ARENA),TIGER2015/PLACE/tl_2015_$x_place.shp)
-	for f in $^; do \
-		ogr2ogr -update -append -nlt POLYGON $@ $$f; \
+GENZ2015/places.shp: $(foreach x,$(STATES_WITH_ARENA),GENZ2015/shp/cb_2015_$x_place_500k.zip)
+	@rm -f $@
+	for f in $(basename $(^F)); do \
+		ogr2ogr $@ /vsizip/$$f.zip $$f -update -append $(TSRS) -nlt POLYGON -select GEOID,NAME -where "PCICBSA='Y'";\
 	done;
-
-TIGER2015/PLACE/tl_2015_%_place.shp: TIGER2015/PLACE/tl_2015_%_place.zip
-	ogr2ogr -overwrite $@ /vsizip/$</$(@F) $(TSRS) -select GEOID,NAME -where "PCICBSA='Y'"
-
-TIGER2015/UAC/tl_2015_us_uac10.shp: TIGER2015/UAC/tl_2015_us_uac10.zip
-	ogr2ogr -overwrite $@ /vsizip/$</$(@F) $(TSRS) -select GEOID10,NAME10
-
-GENZ2014/shp/%.shp: GENZ2014/shp/%.zip
-	ogr2ogr $@ /vsizip/$</$(@F) $(TSRS)
 
 can/provinces.shp: can/gpr_000b11a_e.zip
 	ogr2ogr $@ /vsizip/$</$(basename $(<F)).shp $(TSRS)
@@ -188,16 +183,16 @@ can/provinces.shp: can/gpr_000b11a_e.zip
 # Montreal, Ottawa, Toronto, Edmonton, Calgary, vancouver
 can/places.shp: can/lcsd000a15a_e.zip
 	ogr2ogr -overwrite $@ /vsizip/$</$(basename $(<F)).shp $(TSRS) \
-	-where "CSDUID IN ('2466023', '3506008', '3520005', '4811061', '4806016', '5915022')"
+		-where "CSDUID IN ('2466023', '3506008', '3520005', '4811061', '4806016', '5915022')"
 
 can/gpr_000b11a_e.zip can/lcsd000a15a_e.zip: | can
-	curl -so $@ $(STATCAN)/$(@F)
+	curl -o $@ $(STATCAN)/$(@F)
 
 .SECONDEXPANSION:
-TIGER2014/%.zip TIGER2015/%.zip GENZ2014/shp/%.zip: | $$(@D)
-	curl -so $@ $(CENSUS)/$@
+TIGER2016/%.zip GENZ2015/shp/%.zip: | $$(@D)
+	curl -o $@ $(CENSUS)/$@
 
-TIGER2014/PRISECROADS TIGER2015/PLACE TIGER2015/UAC GENZ2014/shp city can bounds buffer svg:; mkdir -p $@
+TIGER2016/PRISECROADS TIGER2015/PLACE TIGER2015/UAC GENZ2015/shp city can bounds buffer png svg:; mkdir -p $@
 
 # Stadia
 
