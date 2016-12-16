@@ -11,7 +11,7 @@ STATES_WITH_ARENA = 04 06 06 08 11 12 \
 
 TSRS = -t_srs EPSG:4326
 
-CITIES = $(shell cut -d, -f2 citycenters.txt | sed 's/ /_/g')
+CITIES = $(shell cut -d, -f2 citycenters.txt | sed 's/ /_/g; s/\.//g')
 
 COMPLEX_CITIES = Dallas \
 	Fort_Worth \
