@@ -41,70 +41,100 @@ ARENAS = wiki/List_of_National_Hockey_League_arenas.geojson \
 	wiki/Major_League_Baseball.geojson \
 	wiki/National_Basketball_Association.geojson
 
-GEO = GENZ2014/shp/cb_2014_us_state_5m.shp \
-	can/provinces.shp \
-	TIGER2015/UAC/tl_2015_us_uac10.shp \
-	TIGER2015/places.shp \
-	can/places.shp \
-	TIGER2014/prisecroads.shp \
-	$(ARENAS)
+GEO = states \
+	urban \
+	places \
+	roads \
+	arenas \
+	buffer
 
-svg/%.svg: styles.css bounds/% $(GEO) buffer/%.shp | svg
-	xargs -J % svgis draw -j local -xl -f 100 -c $< -p 100 -a mi -s 50 --bounds % < bounds/$* \
-	$(filter %.geojson %.shp,$^) -o $@
+svg/%.svg: styles.css $(foreach g,$(GEO),city/%/$(g).shp) | svg
+	svgis draw -j local -xl -f 100 -c $< -p 100 -a mi,league -s 50 $(filter %.geojson %.shp,$^) -o $@
 
-# bounds
-bounds/%: buffer/%.shp | bounds
-	@rm -f $@
-	ogr2ogr -f CSV /dev/stdout $(<D) -dialect sqlite \
-	-sql "SELECT MbrMinX(Geometry) || ' ' || MbrMinY(Geometry) || ' ' || \
-	MbrMaxX(Geometry) || ' ' || MbrMaxY(Geometry) bounds FROM "'"$*"'" WHERE mi=30" | \
-	grep -v bounds > $@
+# clipped layers
+CLIP = -clipsrc city/$* -clipsrclayer bufferwgs84 -skipfailures
+
+# Local Arenas
+
+city/%/arenas.shp: city/%/bufferwgs84.shp $(ARENAS)
+	ogr2ogr -overwrite $@ wiki/List_of_National_Hockey_League_arenas.geojson $(CLIP) -nlt POINT \
+		-sql "SELECT Name, 'nhl' league FROM OGRGeoJSON"
+	ogr2ogr -update -append $@ wiki/National_Football_League.geojson $(CLIP) \
+		-sql "SELECT Name, 'nfl' league FROM OGRGeoJSON"
+	ogr2ogr -update -append $@ wiki/Major_League_Baseball.geojson $(CLIP) \
+		-sql "SELECT Name, 'mlb' league FROM OGRGeoJSON"
+	ogr2ogr -update -append $@ wiki/National_Basketball_Association.geojson $(CLIP) \
+		-sql "SELECT Name, 'nba' league FROM OGRGeoJSON"
+
+city/%/roads.shp: TIGER2014/prisecroads.shp city/%/bufferwgs84.shp | city/%
+	ogr2ogr $@ $< -overwrite $(CLIP) -nlt LINESTRING -select FULLNAME
+
+city/%/places.shp: TIGER2015/places.shp can/places.shp city/%/bufferwgs84.shp | city/%
+	ogr2ogr $@ $< -overwrite $(CLIP) -nlt POLYGON -select NAME
+	ogr2ogr $@ can places -update -append $(CLIP)
+
+city/%/urban.shp: TIGER2015/UAC/tl_2015_us_uac10.shp city/%/bufferwgs84.shp | city/%
+	ogr2ogr $@ $< -overwrite -nlt POLYGON $(CLIP) -select NAME10
+
+city/%/states.shp: GENZ2014/shp/cb_2014_us_state_5m.shp can/provinces.shp city/%/bufferwgs84.shp | city/%
+	ogr2ogr $@ $< -overwrite -nlt POLYGON $(CLIP) -select NAME
+	ogr2ogr $@ can provinces -update -append $(CLIP)
 
 # Buffers
 
-buffer/Bay_Area.shp: buffer/Oakland.shp buffer/San_Jose.shp buffer/San_Francisco.shp | buffer
-	ogr2ogr $@ $< -overwrite -dialect sqlite -sql "SELECT \
+city/%/bufferwgs84.shp: city/%/buffer.shp
+	ogr2ogr $@ $< -t_srs EPSG:4326 -where mi=30
+
+city/Bay_Area/buffer.shp: $(foreach x,Oakland San_Jose San_Francisco,city/$x/buffer.shp) | city/Bay_Area
+	ogr2ogr $@ $(<D) -overwrite -dialect sqlite -sql "SELECT \
 	ST_union(c.Geometry, ST_union(a.Geometry, b.Geometry)) Geometry, mi \
-	FROM 'buffer/San_Jose.shp'.San_Jose a \
-	LEFT JOIN 'buffer/San_Francisco.shp'.San_Francisco b USING (mi) \
-	LEFT JOIN Oakland c USING (mi)"
+	FROM 'city/San_Jose'.buffer a \
+	LEFT JOIN 'city/San_Francisco'.buffer b USING (mi) \
+	LEFT JOIN buffer c USING (mi)"
 
-buffer/Dallas_Ft_Worth.shp: buffer/Dallas.shp buffer/Fort_Worth.shp | buffer
+city/Dallas_Ft_Worth/buffer.shp: city/Dallas/buffer.shp city/Fort_Worth/buffer.shp | city/Dallas_Ft_Worth
 	ogr2ogr $@ $< -overwrite -dialect sqlite -sql "SELECT \
 	ST_union(a.Geometry, b.Geometry) Geometry, mi \
-	FROM 'buffer/Fort_Worth.shp'.Fort_Worth a \
-	LEFT JOIN Dallas b USING (mi)"
+	FROM 'city/Fort_Worth'.buffer a \
+	LEFT JOIN buffer b USING (mi)"
 
-buffer/Minneapolis_St_Paul.shp: buffer/Minneapolis.shp buffer/Saint_Paul.shp | buffer
+city/Minneapolis_St_Paul/buffer.shp: city/Minneapolis/buffer.shp city/Saint_Paul/buffer.shp | city/Minneapolis_St_Paul
 	ogr2ogr $@ $< -overwrite -dialect sqlite -sql "SELECT \
 	ST_union(a.Geometry, b.Geometry) Geometry, mi \
-	FROM 'buffer/Saint_Paul.shp'.Saint_Paul a \
-	LEFT JOIN Minneapolis b USING (mi)"
+	FROM 'city/Saint_Paul'.buffer a \
+	LEFT JOIN buffer b USING (mi)"
 
-buffer/Tampa_Bay.shp: buffer/Tampa.shp buffer/Saint_Petersburg.shp | buffer
+city/Tampa_Bay/buffer.shp: city/Tampa/buffer.shp city/Saint_Petersburg/buffer.shp | city/Tampa_Bay
 	ogr2ogr $@ $< -overwrite -dialect sqlite -sql "SELECT \
 	ST_union(a.Geometry, b.Geometry) Geometry, mi \
-	FROM 'buffer/Saint_Petersburg.shp'.Saint_Petersburg a \
-	LEFT JOIN Tampa b USING (mi)"
+	FROM 'city/Saint_Petersburg'.buffer a \
+	LEFT JOIN buffer b USING (mi)"
 
-buffer/%.shp: buffer/%_utm.shp
-	ogr2ogr $@ $< $(TSRS) -overwrite -dialect sqlite \
+city/%/buffer.shp: city/%/center.shp
+	ogr2ogr $@ $< -overwrite -dialect sqlite \
 		-sql 'WITH RECURSIVE cnt(mi) AS (SELECT 10 UNION ALL SELECT mi+5 FROM cnt LIMIT 5) \
-		SELECT Buffer(Geometry, mi * 1609.34) Geometry, mi, 'y' ring FROM "$(basename $(<F))", cnt'
+		SELECT Buffer(Geometry, mi * 1609.34) Geometry, mi, 'y' ring FROM $(basename $(<F)), cnt'
 
 # Can't fucking quote in xargs properly WTF
 # Point of this file is that it's in UTM so we can make proper circles
-buffer/%_utm.shp: buffer/%.utm city/centers.geojson
-	ogr2ogr -overwrite $@ $(filter %.geojson,$^) -where "name='$*'" -t_srs "$$(cat $<)"
+city/%/center.shp: city/%/utm.wkt city/centers.geojson | city/%
+	ogr2ogr $@ $(filter %.geojson,$^) -where "name='$*'" -t_srs $< -overwrite
+
+city/Bay_Area/utm.wkt: city/Oakland/utm.wkt; cp $< $@
+city/Dallas_Ft_Worth/utm.wkt: city/Dallas/utm.wkt; cp $< $@
+city/Minneapolis_St_Paul/utm.wkt: city/Minneapolis/utm.wkt; cp $< $@
+city/Tampa_Bay/utm.wkt: city/Tampa/utm.wkt; cp $< $@
+
+%.wkt: %.prj; gdalsrsinfo -o wkt $< > $@
 
 # Small file containing the UTM Proj.4 string.
-# Can't get xargs to work properly with ogr2ogr.
-$(addsuffix .utm,$(addprefix buffer/,$(CITIES))): buffer/%.utm: city/centers.csv | buffer
+$(foreach x,$(CITIES),city/$x/utm.prj): city/%/utm.prj: citycenters.csv | city/%
 	grep "$(subst _, ,$*)" $< | \
 	cut -d, -f1-2 | \
-	sed -E 's/,/ /g;s/(-?[0-9.]+) (-?[0-9.]+)/\1 \2 \1 \2/' | \
+	tr , ' ' | \
 	xargs svgis project -m utm -- > $@
+
+$(addprefix city/,$(CITIES) $(JOINED_CITIES)):; mkdir -p $@
 
 # Geocoding
 

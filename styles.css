@@ -1,13 +1,12 @@
-.provinces,
-.cb_2014_us_state_5m {
+.states {
     fill: #BBB;
     stroke: none;
 }
-.tl_2015_us_uac10 {
+.urban {
     fill: #999;
     stroke: none;
 }
-.prisecroads {
+.roads {
     stroke: white;
     stroke-width: 0.5px;
 }
@@ -18,25 +17,25 @@
 }
 circle {
     stroke-width: 6px;
-    r: 50
+    r: 18;
 }
 .ring_y {
     stroke-width: 0.5px;
     color: #111;
 }
-.National_Hockey_League {
+.league_nhl {
     stroke: darkcyan;
     fill: darkcyan;
 }
-.National_Football_League {
+.league_nfl {
     stroke: red;
     fill: red;
 }
-.Major_League_Baseball {
+.league_mlb {
     stroke: orange;
     fill: orange;
 }
-.National_Basketball_Association {
+.leagu_nba {
     stroke: cornflowerblue;
     fill: cornflowerblue;
 }
