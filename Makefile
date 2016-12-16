@@ -177,6 +177,28 @@ GENZ2015/places.shp: $(foreach x,$(STATES_WITH_ARENA),GENZ2015/shp/cb_2015_$x_pl
 		ogr2ogr $@ /vsizip/$$f.zip $$f -update -append $(TSRS) -nlt POLYGON -select GEOID,NAME -where "PCICBSA='Y'";\
 	done;
 
+COUNTIES = $(shell cat counties.txt)
+
+# Filter out Whatcom, WA (only intersects Canada)
+counties.txt: GENZ2015/county.csv
+	tail -n+2 $< | \
+	cut -d, -f 1 | \
+	grep -v 53073 | \
+	sort | xargs |\
+	fold -sw 80 > $@
+
+GENZ2015/county.csv: GENZ2015/shp/cb_2015_us_county_500k.shp city/buffers.shp
+	@rm -f $@
+	ogr2ogr -f CSV $@ $(<D) -dialect sqlite \
+		-sql "WITH b AS (SELECT ST_Union(Geometry) Buffer FROM 'city'.buffers) \
+		SELECT GEOID, NAME FROM $(basename $(<F)) a, b WHERE ST_Intersects(a.Geometry, b.Buffer)"
+
+city/buffers.shp: $(foreach x,$(JOINED_CITIES) $(SIMPLE_CITIES),city/$x/bufferwgs84.shp)
+	@rm -f $@
+	for d in $(basename $(^D)); do \
+		ogr2ogr $@ $$d $(basename $(<F)) -update -append -nlt POLYGON; \
+	done;
+
 can/provinces.shp: can/gpr_000b11a_e.zip
 	ogr2ogr $@ /vsizip/$</$(basename $(<F)).shp $(TSRS)
 
