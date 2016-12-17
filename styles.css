@@ -15,6 +15,10 @@
     stroke-width: 1px;
     stroke: #333;
 }
+.water {
+    fill: #E3F7FF;
+    stroke: none;
+}
 circle {
     stroke-width: 6px;
     r: 18;

@@ -169,15 +169,22 @@ TIGER2016/prisecroads.shp: $(foreach x,$(STATES_WITH_ARENA),TIGER2016/PRISECROAD
 		ogr2ogr $@ /vsizip/$$f.zip $$f -update -append -nlt LINESTRING $(TSRS) -where "MTFCC='S1100'"; \
 	done;
 
-TIGER2016/water.shp: $(foreach x,$(STATES_WITH_ARENA),TIGER2016/AREAWATER/tl_2016_$x_areawater.zip)
-
 GENZ2015/places.shp: $(foreach x,$(STATES_WITH_ARENA),GENZ2015/shp/cb_2015_$x_place_500k.zip)
 	@rm -f $@
 	for f in $(basename $(^F)); do \
 		ogr2ogr $@ /vsizip/$$f.zip $$f -update -append $(TSRS) -nlt POLYGON -select GEOID,NAME -where "PCICBSA='Y'";\
 	done;
 
+# Counties
+
 COUNTIES = $(shell cat counties.txt)
+
+TIGER2016/water.shp: $(foreach x,$(COUNTIES),TIGER2016/AREAWATER/tl_2016_$x_areawater.zip)
+	@rm -f $@
+	for f in $(basename $(^F)); do \
+		ogr2ogr $@ /vsizip/$$f.zip $$f -update -append -nlt POLYGON $(TSRS) \
+		-select FULLNAME -where "MTFCC IN ('H2030', 'H2040', 'H2051', 'H2053')"; \
+	done;
 
 # Filter out Whatcom, WA (only intersects Canada)
 counties.txt: GENZ2015/county.csv
@@ -210,11 +217,14 @@ can/places.shp: can/lcsd000a15a_e.zip
 can/gpr_000b11a_e.zip can/lcsd000a15a_e.zip: | can
 	curl -o $@ $(STATCAN)/$(@F)
 
+%.shp: %.zip
+	ogr2ogr $@ /vsizip/$< $(basename $(<F)) $(TSRS)
+
 .SECONDEXPANSION:
 TIGER2016/%.zip GENZ2015/shp/%.zip: | $$(@D)
 	curl -o $@ $(CENSUS)/$@
 
-TIGER2016/PRISECROADS TIGER2015/PLACE TIGER2015/UAC GENZ2015/shp city can bounds buffer png svg:; mkdir -p $@
+TIGER2016/AREAWATER TIGER2016/PRISECROADS TIGER2015/PLACE TIGER2015/UAC GENZ2015/shp city can bounds buffer png svg:; mkdir -p $@
 
 # Stadia
 
