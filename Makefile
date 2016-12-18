@@ -197,7 +197,7 @@ TIGER2016/water.shp: $(foreach x,$(COUNTIES),TIGER2016/AREAWATER/tl_2016_$x_area
 	for f in $(COUNTIES); do \
 		ogr2ogr $@ /vsizip/$(<D)/tl_2016_$${f}_areawater.zip tl_2016_$${f}_areawater \
 		-nlt POLYGON $(TSRS) -update -append \
-		-select FULLNAME -where "MTFCC IN ('H2030', 'H2040', 'H2051', 'H2053', 'H3010')"; \
+		-select FULLNAME -where "AWATER > 12000 AND MTFCC IN ('H2030', 'H2040', 'H2051', 'H2053', 'H3010', 'H3020')"; \
 	done;
 	ogrinfo $(@D) -sql 'CREATE SPATIAL INDEX ON $(basename $(@F))'
 
