@@ -1,5 +1,6 @@
 CENSUS = ftp://ftp2.census.gov/geo/tiger
 STATCAN = http://www12.statcan.gc.ca/census-recensement/2011/geo/bound-limit/files-fichiers
+UTLIBRARY = http://data.library.utoronto.ca/datapub/cc11/geo/cbf/mapinfo
 OPENCAN = http://ftp2.cits.rncan.gc.ca/pub/geobase/official/muni/shp_eng
 KMLEXPORT = https://tools.wmflabs.org/kmlexport/
 
@@ -52,6 +53,8 @@ JOINED_CITIES = Dallas_Ft_Worth \
 
 SIMPLE_CITIES = $(filter-out $(COMPLEX_CITIES),$(CITIES))
 
+CANADIAN_CITIES = Calgary Edmonton Toronto Vancouver
+
 .SECONDARY:
 
 all: $(addsuffix .svg,$(addprefix svg/,$(SIMPLE_CITIES) $(JOINED_CITIES))) \
@@ -79,15 +82,20 @@ city/%/arenas.shp: city/%/bufferwgs84.shp $(ARENAS)
 city/%/roads.shp: TIGER2014/prisecroads.shp city/%/bufferwgs84.shp | city/%
 	ogr2ogr $@ $< -overwrite $(CLIP) -nlt LINESTRING -select FULLNAME
 
-city/%/water.shp: TIGER2016/water.shp city/%/bufferwgs84.shp | city/%
+$(foreach x,$(CANADIAN_CITIES),city/$x/water.shp): city/%/water.shp: can/ghy_000c11m_e can/ghy_000h11m_e city/%/bufferwgs84.shp | city/%
+	ogr2ogr $@ $< -overwrite $(CLIP) -nlt POLYGON
+	ogr2ogr $@ can/ghy_000h11m_e -update -append $(CLIP)
+
+$(foreach x,$(filter-out $(CANADIAN_CITIES),$(CITIES)),city/$x/water.shp): city/%/water.shp: TIGER2016/water.shp city/%/bufferwgs84.shp | city/%
 	ogr2ogr $@ $< -overwrite $(CLIP) -nlt POLYGON
 
 city/%/places.shp: GENZ2015/places.shp can/places.shp city/%/bufferwgs84.shp | city/%
 	ogr2ogr $@ $< -overwrite $(CLIP) -nlt POLYGON
 	ogr2ogr $@ can places -update -append $(CLIP)
 
-city/%/urban.shp: GENZ2015/shp/cb_2015_us_ua10_500k.zip city/%/bufferwgs84.shp | city/%
+city/%/urban.shp: GENZ2015/shp/cb_2015_us_ua10_500k.zip can/gpc_000b11m_e city/%/bufferwgs84.shp | city/%
 	ogr2ogr $@ /vsizip/$</$(basename $(<F)).shp -overwrite -nlt POLYGON $(TSRS) $(CLIP) -select GEOID10,NAME10
+	ogr2ogr $@ can/gpc_000b11m_e -update -append $(TSRS) $(CLIP)
 
 city/%/states.shp: GENZ2015/shp/cb_2015_us_state_500k.zip can/provinces.shp city/%/bufferwgs84.shp | city/%
 	ogr2ogr $@ /vsizip/$</$(basename $(<F)).shp -overwrite -nlt POLYGON $(TSRS) $(CLIP) -select GEOID,NAME
@@ -233,6 +241,12 @@ can/places.shp: can/lcsd000a15a_e.zip
 can/gpr_000b11a_e.zip can/lcsd000a15a_e.zip: | can
 	curl -o $@ $(STATCAN)/$(@F)
 
+can/gpc_000b11m_e can/ghy_000c11m_e can/ghy_000h11m_e: can/%: can/%.zip
+	unzip -d $@ $< -x '*.pdf'
+
+can/gpc_000b11m_e.zip can/ghy_000c11m_e.zip can/ghy_000h11m_e.zip: | can
+	curl -o $@ $(UTLIBRARY)/$(@F)
+
 %.shp: %.zip
 	ogr2ogr $@ /vsizip/$< $(basename $(<F)) $(TSRS)
 
@@ -240,7 +254,8 @@ can/gpr_000b11a_e.zip can/lcsd000a15a_e.zip: | can
 TIGER2014/%.zip TIGER2016/%.zip GENZ2015/shp/%.zip: | $$(@D)
 	curl -o $@ $(CENSUS)/$@
 
-TIGER2016/AREAWATER TIGER2014/PRISECROADS TIGER2015/PLACE TIGER2015/UAC GENZ2015/shp city can bounds buffer png svg:; mkdir -p $@
+TIGER2016/AREAWATER TIGER2014/PRISECROADS TIGER2015/PLACE TIGER2015/UAC GENZ2015/shp \
+	city can bounds buffer png svg:; mkdir -p $@
 
 # Stadia
 
