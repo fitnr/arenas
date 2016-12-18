@@ -99,7 +99,13 @@ city/%/urban.shp: GENZ2015/shp/cb_2015_us_ua10_500k.zip can/gpc_000b11m_e city/%
 	ogr2ogr $@ /vsizip/$</$(basename $(<F)).shp -overwrite -nlt POLYGON $(TSRS) $(CLIP) -select GEOID10
 	ogr2ogr $@ can/gpc_000b11m_e -update -append $(TSRS) $(CLIP)
 
-city/%/states.shp: GENZ2015/shp/cb_2015_us_state_500k.zip can/provinces.shp city/%/bufferwgs84.shp | city/%
+city/San_Diego/states.shp: city/%/states.shp: GENZ2015/shp/cb_2015_us_state_500k.zip geojson/shim.geojson naturalearth/ne_10m_admin_0_countries.zip city/%/bufferwgs84.shp
+	ogr2ogr $@ /vsizip/$</$(basename $(<F)).shp -overwrite -nlt POLYGON $(TSRS) $(CLIP) -select GEOID
+	ogr2ogr $@ $(filter %.geojson,$^) -update -append $(CLIP)
+	ogr2ogr $@ /vsizip/naturalearth/ne_10m_admin_0_countries.zip/ne_10m_admin_0_countries.shp \
+	  -where "admin='Mexico'" -update -append $(CLIP)
+
+city/%/states.shp: GENZ2015/shp/cb_2015_us_state_500k.zip can/provinces.shp naturalearth/ne_10m_admin_0_countries.zip city/%/bufferwgs84.shp
 	ogr2ogr $@ /vsizip/$</$(basename $(<F)).shp -overwrite -nlt POLYGON $(TSRS) $(CLIP) -select GEOID
 	ogr2ogr $@ can provinces -update -append $(CLIP)
 
@@ -251,6 +257,9 @@ can/gpc_000b11m_e.zip can/ghy_000c11m_e.zip can/ghy_000h11m_e.zip: | can
 
 %.shp: %.zip
 	ogr2ogr $@ /vsizip/$< $(basename $(<F)) $(TSRS)
+
+naturalearth/ne_10m_admin_0_countries.zip:
+	curl -L -o $@ http://naciscdn.org/naturalearth/10m/cultural/ne_10m_admin_0_countries.zip
 
 .SECONDEXPANSION:
 TIGER2014/%.zip TIGER2016/%.zip GENZ2015/shp/%.zip: | $$(@D)
