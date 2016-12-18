@@ -13,7 +13,8 @@ STATES_WITH_ARENA = 04 06 06 08 11 12 \
 ARENAS = wiki/List_of_National_Hockey_League_arenas.geojson \
 	wiki/National_Football_League.geojson \
 	wiki/Major_League_Baseball.geojson \
-	wiki/National_Basketball_Association.geojson
+	wiki/National_Basketball_Association.geojson \
+	wiki/List_of_Major_League_Soccer_stadiums.geojson
 
 GEO = bufferwgs84 \
 	states \
@@ -78,6 +79,7 @@ city/%/arenas.shp: city/%/bufferwgs84.shp $(ARENAS)
 	ogr2ogr -update -append $@ wiki/National_Basketball_Association.geojson $(CLIP)
 	ogr2ogr -update -append $@ wiki/List_of_National_Hockey_League_arenas.geojson $(CLIP)
 	ogr2ogr -update -append $@ wiki/National_Football_League.geojson $(CLIP)
+	ogr2ogr -update -append $@ wiki/List_of_Major_League_Soccer_stadiums.geojson $(CLIP)
 
 city/%/roads.shp: TIGER2014/prisecroads.shp city/%/bufferwgs84.shp | city/%
 	ogr2ogr $@ $< -overwrite $(CLIP) -nlt LINESTRING -select FULLNAME
@@ -263,11 +265,13 @@ National_Football_League_section = Clubs
 List_of_National_Hockey_League_arenas_section = Current_arenas
 Major_League_Baseball_section = Teams
 National_Basketball_Association_section = Teams
+List_of_Major_League_Soccer_stadiums_section = Stadiums
 
 National_Football_League_league = nfl
 List_of_National_Hockey_League_arenas_league = nhl
 Major_League_Baseball_league = mlb
 National_Basketball_Association_league = nba
+List_of_Major_League_Soccer_stadiums_league = mls
 
 .PHONY: arenas
 arenas: $(ARENAS)

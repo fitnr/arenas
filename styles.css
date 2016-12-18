@@ -48,3 +48,8 @@ circle {
     fill: #5053ED;
     r: 9;
 }
+.league_mls {
+    stroke: #C000B0;
+    fill: #C000B0;
+    r: 6;
+}
