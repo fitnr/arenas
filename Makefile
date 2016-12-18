@@ -14,14 +14,14 @@ ARENAS = wiki/List_of_National_Hockey_League_arenas.geojson \
 	wiki/Major_League_Baseball.geojson \
 	wiki/National_Basketball_Association.geojson
 
-GEO = states \
+GEO = bufferwgs84 \
+	states \
 	urban \
 	water \
 	places \
 	roads \
 	arenas \
 	buffer
-
 
 PLACES = 0455000 0653000 0664000 0666000 0668000 0667000 0644000 0820000 1150000 \
 	1271000 1235000 1245000 1304000 1714000 1836003 2036000 2255000 2404000 2507000 \

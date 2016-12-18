@@ -15,6 +15,7 @@
     stroke-width: 1px;
     stroke: #333;
 }
+.bufferwgs84,
 .water {
     fill: #E3F7FF;
     stroke: none;
@@ -23,9 +24,9 @@ circle {
     stroke-width: 6px;
     r: 18;
 }
-.ring_y {
+#buffer polygon {
     stroke-width: 0.5px;
-    color: #111;
+    stroke: #666;
 }
 .league_nhl {
     stroke: darkcyan;
@@ -39,7 +40,7 @@ circle {
     stroke: orange;
     fill: orange;
 }
-.leagu_nba {
+.league_nba {
     stroke: cornflowerblue;
     fill: cornflowerblue;
 }
