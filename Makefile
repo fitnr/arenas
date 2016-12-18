@@ -9,6 +9,28 @@ STATES_WITH_ARENA = 04 06 06 08 11 12 \
 	36 37 39 40 41 \
 	42 47 48 49 53 55
 
+ARENAS = wiki/List_of_National_Hockey_League_arenas.geojson \
+	wiki/National_Football_League.geojson \
+	wiki/Major_League_Baseball.geojson \
+	wiki/National_Basketball_Association.geojson
+
+GEO = states \
+	urban \
+	water \
+	places \
+	roads \
+	arenas \
+	buffer
+
+
+PLACES = 0455000 0653000 0664000 0666000 0668000 0667000 0644000 0820000 1150000 \
+	1271000 1235000 1245000 1304000 1714000 1836003 2036000 2255000 2404000 2507000 \
+	2622000 2743000 2758000 2938000 2965000 3651000 3611000 3712000 3916000 3918000 \
+	3915000 4055000 4075000 4159000 4261000 4260000 4752006 4748000 4819000 4827000 \
+	4865000 4805000 4835000 4967000 5363000 5553000 5531000 1263000
+
+, = ,
+
 TSRS = -t_srs EPSG:4326
 
 CITIES = $(shell cut -d, -f2 citycenters.txt | sed 's/ /_/g; s/\.//g')
@@ -32,22 +54,13 @@ SIMPLE_CITIES = $(filter-out $(COMPLEX_CITIES),$(CITIES))
 
 .SECONDARY:
 
-all: $(addsuffix .svg,$(addprefix svg/,$(SIMPLE_CITIES) $(JOINED_CITIES)))
+all: $(addsuffix .svg,$(addprefix svg/,$(SIMPLE_CITIES) $(JOINED_CITIES))) \
+     $(addsuffix .png,$(addprefix png/,$(SIMPLE_CITIES) $(JOINED_CITIES)))
 
 # Maps
 
-ARENAS = wiki/List_of_National_Hockey_League_arenas.geojson \
-	wiki/National_Football_League.geojson \
-	wiki/Major_League_Baseball.geojson \
-	wiki/National_Basketball_Association.geojson
-
-GEO = states \
-	urban \
-	water \
-	places \
-	roads \
-	arenas \
-	buffer
+png/%.png: svg/%.svg | png
+	convert -density 150x150 $< $@
 
 svg/%.svg: styles.css $(foreach g,$(GEO),city/%/$(g).shp) | svg
 	svgis draw -j local -xl -f 100 -c $< -p 100 -a mi,league -s 50 $(filter %.geojson %.shp,$^) -o $@
@@ -170,7 +183,8 @@ TIGER2014/prisecroads.shp: $(foreach x,$(STATES_WITH_ARENA),TIGER2014/PRISECROAD
 GENZ2015/places.shp: $(foreach x,$(STATES_WITH_ARENA),GENZ2015/shp/cb_2015_$x_place_500k.zip)
 	@rm -f $@
 	for f in $(basename $(^F)); do \
-		ogr2ogr $@ /vsizip/$(<D)/$$f.zip $$f -update -append $(TSRS) -nlt POLYGON -select GEOID,NAME ;\
+		ogr2ogr $@ /vsizip/$(<D)/$$f.zip $$f -update -append $(TSRS) -nlt POLYGON -select GEOID,NAME \
+		-where "GEOID IN ('$(subst $() $(),'$(,) ',$(PLACES))')";\
 	done;
 	ogrinfo $(@D) -sql 'CREATE SPATIAL INDEX ON $(basename $(@F))'
 
