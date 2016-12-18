@@ -81,21 +81,21 @@ city/%/arenas.shp: city/%/bufferwgs84.shp $(ARENAS)
 	ogr2ogr -update -append $@ wiki/National_Football_League.geojson $(CLIP)
 	ogr2ogr -update -append $@ wiki/List_of_Major_League_Soccer_stadiums.geojson $(CLIP)
 
-city/%/roads.shp: TIGER2014/prisecroads.shp city/%/bufferwgs84.shp | city/%
+city/%/roads.shp: TIGER2014/prisecroads.shp city/%/bufferwgs84.shp
 	ogr2ogr $@ $< -overwrite $(CLIP) -nlt LINESTRING -select FULLNAME
 
-$(foreach x,$(CANADIAN_CITIES),city/$x/water.shp): city/%/water.shp: can/ghy_000c11m_e can/ghy_000h11m_e city/%/bufferwgs84.shp | city/%
+$(foreach x,$(CANADIAN_CITIES),city/$x/water.shp): city/%/water.shp: can/ghy_000c11m_e can/ghy_000h11m_e city/%/bufferwgs84.shp
 	ogr2ogr $@ $< -overwrite $(CLIP) -nlt POLYGON
 	ogr2ogr $@ can/ghy_000h11m_e -update -append $(CLIP)
 
-$(foreach x,$(filter-out $(CANADIAN_CITIES),$(CITIES)),city/$x/water.shp): city/%/water.shp: TIGER2016/water.shp city/%/bufferwgs84.shp | city/%
+$(foreach x,$(filter-out $(CANADIAN_CITIES),$(CITIES)),city/$x/water.shp): city/%/water.shp: TIGER2016/water.shp city/%/bufferwgs84.shp
 	ogr2ogr $@ $< -overwrite $(CLIP) -nlt POLYGON
 
-city/%/places.shp: GENZ2015/places.shp can/places.shp city/%/bufferwgs84.shp | city/%
+city/%/places.shp: GENZ2015/places.shp can/places.shp city/%/bufferwgs84.shp
 	ogr2ogr $@ $< -overwrite $(CLIP) -nlt POLYGON
 	ogr2ogr $@ can places -update -append $(CLIP)
 
-city/%/urban.shp: GENZ2015/shp/cb_2015_us_ua10_500k.zip can/gpc_000b11m_e city/%/bufferwgs84.shp | city/%
+city/%/urban.shp: GENZ2015/shp/cb_2015_us_ua10_500k.zip can/gpc_000b11m_e city/%/bufferwgs84.shp
 	ogr2ogr $@ /vsizip/$</$(basename $(<F)).shp -overwrite -nlt POLYGON $(TSRS) $(CLIP) -select GEOID10
 	ogr2ogr $@ can/gpc_000b11m_e -update -append $(TSRS) $(CLIP)
 
@@ -249,7 +249,7 @@ can/places.shp: can/lcsd000a15a_e.zip
 can/gpr_000b11a_e.zip can/lcsd000a15a_e.zip: | can
 	curl -o $@ $(STATCAN)/$(@F)
 
-can/gpc_000b11m_e can/ghy_000c11m_e can/ghy_000h11m_e: can/%: can/%.zip
+can/gpc_000b11m_e can/ghy_000c11m_e can/ghy_000h11m_e: can/%: can/%.zip | can
 	unzip -d $@ $< -x '*.pdf'
 
 can/gpc_000b11m_e.zip can/ghy_000c11m_e.zip can/ghy_000h11m_e.zip: | can
@@ -258,7 +258,7 @@ can/gpc_000b11m_e.zip can/ghy_000c11m_e.zip can/ghy_000h11m_e.zip: | can
 %.shp: %.zip
 	ogr2ogr $@ /vsizip/$< $(basename $(<F)) $(TSRS)
 
-naturalearth/ne_10m_admin_0_countries.zip:
+naturalearth/ne_10m_admin_0_countries.zip: | naturalearth
 	curl -L -o $@ http://naciscdn.org/naturalearth/10m/cultural/ne_10m_admin_0_countries.zip
 
 .SECONDEXPANSION:
@@ -266,7 +266,7 @@ TIGER2014/%.zip TIGER2016/%.zip GENZ2015/shp/%.zip: | $$(@D)
 	curl -o $@ $(CENSUS)/$@
 
 TIGER2016/AREAWATER TIGER2014/PRISECROADS TIGER2015/PLACE TIGER2015/UAC GENZ2015/shp \
-	city can bounds buffer png svg:; mkdir -p $@
+	city can naturalearth buffer png svg:; mkdir -p $@
 
 # Stadia
 
