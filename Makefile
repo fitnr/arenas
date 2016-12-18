@@ -35,26 +35,26 @@ PLACES = 0455000 0653000 0664000 0666000 0668000 0667000 0644000 0820000 1150000
 
 TSRS = -t_srs EPSG:4326
 
-CITIES = $(shell cut -d, -f2 citycenters.txt | sed 's/ /_/g; s/\.//g')
+CITIES = $(shell cut -d, -f2 citycenters.txt | tr A-Z a-z | sed 's/ /_/g; s/\.//g')
 
-COMPLEX_CITIES = Dallas \
-	Fort_Worth \
-	Minneapolis \
-	Saint_Paul \
-	Oakland \
-	San_Jose \
-	San_Francisco \
-	Saint_Petersburg \
-	Tampa
+COMPLEX_CITIES = dallas \
+	fort_worth \
+	minneapolis \
+	saint_paul \
+	oakland \
+	san_jose \
+	san_francisco \
+	saint_petersburg \
+	tampa
 
-JOINED_CITIES = Dallas_Ft_Worth \
-	Minneapolis_St_Paul \
-	Bay_Area \
-	Tampa_Bay
+JOINED_CITIES = dallas_ft_worth \
+	minneapolis_st_paul \
+	bay_area \
+	tampa_bay
 
 SIMPLE_CITIES = $(filter-out $(COMPLEX_CITIES),$(CITIES))
 
-CANADIAN_CITIES = Calgary Edmonton Toronto Vancouver
+CANADIAN_CITIES = calgary edmonton toronto vancouver
 
 .SECONDARY:
 
@@ -99,7 +99,7 @@ city/%/urban.shp: GENZ2015/shp/cb_2015_us_ua10_500k.zip can/gpc_000b11m_e city/%
 	ogr2ogr $@ /vsizip/$</$(basename $(<F)).shp -overwrite -nlt POLYGON $(TSRS) $(CLIP) -select GEOID10
 	ogr2ogr $@ can/gpc_000b11m_e -update -append $(TSRS) $(CLIP)
 
-city/San_Diego/states.shp: city/%/states.shp: GENZ2015/shp/cb_2015_us_state_500k.zip geojson/shim.geojson naturalearth/ne_10m_admin_0_countries.zip city/%/bufferwgs84.shp
+city/san_diego/states.shp: city/%/states.shp: GENZ2015/shp/cb_2015_us_state_500k.zip geojson/shim.geojson naturalearth/ne_10m_admin_0_countries.zip city/%/bufferwgs84.shp
 	ogr2ogr $@ /vsizip/$</$(basename $(<F)).shp -overwrite -nlt POLYGON $(TSRS) $(CLIP) -select GEOID
 	ogr2ogr $@ $(filter %.geojson,$^) -update -append $(CLIP)
 	ogr2ogr $@ /vsizip/naturalearth/ne_10m_admin_0_countries.zip/ne_10m_admin_0_countries.shp \
@@ -114,29 +114,25 @@ city/%/states.shp: GENZ2015/shp/cb_2015_us_state_500k.zip can/provinces.shp natu
 city/%/bufferwgs84.shp: city/%/buffer.shp
 	ogr2ogr $@ $< $(TSRS) -where mi=30
 
-city/Bay_Area/buffer.shp: $(foreach x,Oakland San_Jose San_Francisco,city/$x/buffer.shp) | city/Bay_Area
+city/bay_area/buffer.shp: $(foreach x,oakland san_jose san_francisco,city/$x/buffer.shp) | city/bay_area
 	ogr2ogr $@ $(<D) -overwrite -dialect sqlite -sql "SELECT \
 	ST_union(c.Geometry, ST_union(a.Geometry, b.Geometry)) Geometry, mi \
-	FROM 'city/San_Jose'.buffer a \
-	LEFT JOIN 'city/San_Francisco'.buffer b USING (mi) \
+	FROM 'city/san_jose'.buffer a \
+	LEFT JOIN 'city/san_francisco'.buffer b USING (mi) \
 	LEFT JOIN buffer c USING (mi)"
 
-city/Dallas_Ft_Worth/buffer.shp: city/Dallas/buffer.shp city/Fort_Worth/buffer.shp | city/Dallas_Ft_Worth
-	ogr2ogr $@ $< -overwrite -dialect sqlite -sql "SELECT \
-	ST_union(a.Geometry, b.Geometry) Geometry, mi \
-	FROM 'city/Fort_Worth'.buffer a \
-	LEFT JOIN buffer b USING (mi)"
+dallas_ft_worth = dallas fort_worth
+minneapolis_st_paul = minneapolis saint_paul
+tampa_bay = tampa saint_petersburg
 
-city/Minneapolis_St_Paul/buffer.shp: city/Minneapolis/buffer.shp city/Saint_Paul/buffer.shp | city/Minneapolis_St_Paul
-	ogr2ogr $@ $< -overwrite -dialect sqlite -sql "SELECT \
-	ST_union(a.Geometry, b.Geometry) Geometry, mi \
-	FROM 'city/Saint_Paul'.buffer a \
-	LEFT JOIN buffer b USING (mi)"
+sisters = city/dallas_ft_worth/buffer.shp city/minneapolis_st_paul/buffer.shp city/tampa_bay/buffer.shp
 
-city/Tampa_Bay/buffer.shp: city/Tampa/buffer.shp city/Saint_Petersburg/buffer.shp | city/Tampa_Bay
+.SECONDEXPANSION:
+
+$(sisters): city/%/buffer.shp: $$(foreach x,$$($$*),city/$$x/buffer.shp) | $$(@D)
 	ogr2ogr $@ $< -overwrite -dialect sqlite -sql "SELECT \
 	ST_union(a.Geometry, b.Geometry) Geometry, mi \
-	FROM 'city/Saint_Petersburg'.buffer a \
+	FROM 'city/$(word 2,$($*))'.buffer a \
 	LEFT JOIN buffer b USING (mi)"
 
 city/%/buffer.shp: city/%/center.shp
@@ -261,7 +257,6 @@ can/gpc_000b11m_e.zip can/ghy_000c11m_e.zip can/ghy_000h11m_e.zip: | can
 naturalearth/ne_10m_admin_0_countries.zip: | naturalearth
 	curl -L -o $@ http://naciscdn.org/naturalearth/10m/cultural/ne_10m_admin_0_countries.zip
 
-.SECONDEXPANSION:
 TIGER2014/%.zip TIGER2016/%.zip GENZ2015/shp/%.zip: | $$(@D)
 	curl -o $@ $(CENSUS)/$@
 
