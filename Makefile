@@ -64,7 +64,7 @@ all: $(addsuffix .svg,$(addprefix svg/,$(SIMPLE_CITIES) $(JOINED_CITIES))) \
 # Maps
 
 png/%.png: svg/%.svg | png
-	convert -density 150x150 $< $@
+	convert -density 150x150 $< -scale 33% $@
 
 svg/%.svg: styles.css $(foreach g,$(GEO),city/%/$(g).shp) | svg
 	svgis draw -j local -xl -f 100 -c $< -p 100 -i Name -a mi,league -s 50 $(filter %.geojson %.shp,$^) -o $@

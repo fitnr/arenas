@@ -1,13 +1,13 @@
 .states {
-    fill: #BBB;
+    fill: #DEDCDD;
     stroke: none;
 }
 .urban {
-    fill: #999;
+    fill: #C7C6C6;
     stroke: none;
 }
 .roads {
-    stroke: white;
+    stroke: #A6A6A6;
     stroke-width: 0.5px;
 }
 .places {
@@ -17,39 +17,47 @@
 }
 .bufferwgs84,
 .water {
-    fill: #E6F3FF;
+    fill: #F7F8FC;
     stroke: none;
 }
 circle {
-    stroke-width: 3px;
+    stroke-width: 4px;
     fill-opacity: 0.2;
 }
-#buffer polygon {
-    stroke-width: 0.5px;
+polygon.buffer {
+    stroke-width: 0.25px;
     stroke: #666;
 }
+polygon.mi_30 {
+    stroke-width: 0;
+    stroke: none;
+}
 .league_nhl {
-    stroke: #538B67;
-    fill: #538B67;
-    r: 8;
+    /* orange */
+    stroke: #FF8F2F;
+    fill: #FF8F2F;
+    r: 16;
 }
 .league_nfl {
-    stroke: #FF6D6F;
-    fill: #FF6D6F;
-    r: 8;
+    /* red */
+    stroke: #F2464F;
+    fill: #F2464F;
+    r: 16;
 }
 .league_mlb {
-    stroke: #FFB84B;
-    fill: #FFB84B;
-    r: 9;
+    /* green */
+    stroke: #177B10;
+    fill: #177B10;
+    r: 20;
 }
 .league_nba {
+    /* blue */
     stroke: #5053ED;
     fill: #5053ED;
-    r: 9;
+    r: 20;
 }
 .league_mls {
-    stroke: #C000B0;
-    fill: #C000B0;
-    r: 6;
+    stroke: #C0378F;
+    fill: #C0378F;
+    r: 16;
 }
