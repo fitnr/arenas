@@ -66,7 +66,7 @@ png/%.png: svg/%.svg | png
 	convert -density 150x150 $< $@
 
 svg/%.svg: styles.css $(foreach g,$(GEO),city/%/$(g).shp) | svg
-	svgis draw -j local -xl -f 100 -c $< -p 100 -a mi,league -s 50 $(filter %.geojson %.shp,$^) -o $@
+	svgis draw -j local -xl -f 100 -c $< -p 100 -i Name -a mi,league -s 50 $(filter %.geojson %.shp,$^) -o $@
 
 # clipped layers
 CLIP = -clipdst city/$* -clipdstlayer bufferwgs84 -skipfailures
@@ -94,11 +94,11 @@ city/%/places.shp: GENZ2015/places.shp can/places.shp city/%/bufferwgs84.shp | c
 	ogr2ogr $@ can places -update -append $(CLIP)
 
 city/%/urban.shp: GENZ2015/shp/cb_2015_us_ua10_500k.zip can/gpc_000b11m_e city/%/bufferwgs84.shp | city/%
-	ogr2ogr $@ /vsizip/$</$(basename $(<F)).shp -overwrite -nlt POLYGON $(TSRS) $(CLIP) -select GEOID10,NAME10
+	ogr2ogr $@ /vsizip/$</$(basename $(<F)).shp -overwrite -nlt POLYGON $(TSRS) $(CLIP) -select GEOID10
 	ogr2ogr $@ can/gpc_000b11m_e -update -append $(TSRS) $(CLIP)
 
 city/%/states.shp: GENZ2015/shp/cb_2015_us_state_500k.zip can/provinces.shp city/%/bufferwgs84.shp | city/%
-	ogr2ogr $@ /vsizip/$</$(basename $(<F)).shp -overwrite -nlt POLYGON $(TSRS) $(CLIP) -select GEOID,NAME
+	ogr2ogr $@ /vsizip/$</$(basename $(<F)).shp -overwrite -nlt POLYGON $(TSRS) $(CLIP) -select GEOID
 	ogr2ogr $@ can provinces -update -append $(CLIP)
 
 # Buffers
