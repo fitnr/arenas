@@ -43,6 +43,7 @@ ARENAS = wiki/List_of_National_Hockey_League_arenas.geojson \
 
 GEO = states \
 	urban \
+	water \
 	places \
 	roads \
 	arenas \
@@ -52,7 +53,7 @@ svg/%.svg: styles.css $(foreach g,$(GEO),city/%/$(g).shp) | svg
 	svgis draw -j local -xl -f 100 -c $< -p 100 -a mi,league -s 50 $(filter %.geojson %.shp,$^) -o $@
 
 # clipped layers
-CLIP = -clipsrc city/$* -clipsrclayer bufferwgs84 -skipfailures
+CLIP = -clipdst city/$* -clipdstlayer bufferwgs84 -skipfailures
 
 # Local Arenas
 
@@ -66,7 +67,7 @@ city/%/arenas.shp: city/%/bufferwgs84.shp $(ARENAS)
 	ogr2ogr -update -append $@ wiki/National_Basketball_Association.geojson $(CLIP) \
 		-sql "SELECT Name, 'nba' league FROM OGRGeoJSON"
 
-city/%/roads.shp: TIGER2016/prisecroads.shp city/%/bufferwgs84.shp | city/%
+city/%/roads.shp: TIGER2014/prisecroads.shp city/%/bufferwgs84.shp | city/%
 	ogr2ogr $@ $< -overwrite $(CLIP) -nlt LINESTRING -select FULLNAME
 
 city/%/water.shp: TIGER2016/water.shp city/%/bufferwgs84.shp | city/%
@@ -163,17 +164,19 @@ citycenters.csv: citycenters.txt | city
 	sed 's/Old Toronto/Toronto/g; s/Ville-Marie/Montreal/g; s/St. /St /g; s/Manhattan/New York/g' >> $@
 
 # Census
-TIGER2016/prisecroads.shp: $(foreach x,$(STATES_WITH_ARENA),TIGER2016/PRISECROADS/tl_2014_$x_prisecroads.zip)
+TIGER2014/prisecroads.shp: $(foreach x,$(STATES_WITH_ARENA),TIGER2014/PRISECROADS/tl_2014_$x_prisecroads.zip)
 	@rm -f $@
 	for f in $(basename $(^F)); do \
-		ogr2ogr $@ /vsizip/$$f.zip $$f -update -append -nlt LINESTRING $(TSRS) -where "MTFCC='S1100'"; \
+		ogr2ogr $@ /vsizip/$(<D)/$$f.zip $$f -update -append -nlt LINESTRING $(TSRS) -where "MTFCC='S1100'"; \
 	done;
+	ogrinfo $@ -sql 'CREATE SPATIAL INDEX ON $(@F)'
 
 GENZ2015/places.shp: $(foreach x,$(STATES_WITH_ARENA),GENZ2015/shp/cb_2015_$x_place_500k.zip)
 	@rm -f $@
 	for f in $(basename $(^F)); do \
-		ogr2ogr $@ /vsizip/$$f.zip $$f -update -append $(TSRS) -nlt POLYGON -select GEOID,NAME -where "PCICBSA='Y'";\
+		ogr2ogr $@ /vsizip/$(<D)/$$f.zip $$f -update -append $(TSRS) -nlt POLYGON -select GEOID,NAME ;\
 	done;
+	ogrinfo $(@D) -sql 'CREATE SPATIAL INDEX ON $(basename $(@F))'
 
 # Counties
 
@@ -181,10 +184,12 @@ COUNTIES = $(shell cat counties.txt)
 
 TIGER2016/water.shp: $(foreach x,$(COUNTIES),TIGER2016/AREAWATER/tl_2016_$x_areawater.zip)
 	@rm -f $@
-	for f in $(basename $(^F)); do \
-		ogr2ogr $@ /vsizip/$$f.zip $$f -update -append -nlt POLYGON $(TSRS) \
-		-select FULLNAME -where "MTFCC IN ('H2030', 'H2040', 'H2051', 'H2053')"; \
+	for f in $(COUNTIES); do \
+		ogr2ogr $@ /vsizip/$(<D)/tl_2016_$${f}_areawater.zip tl_2016_$${f}_areawater \
+		-nlt POLYGON $(TSRS) -update -append \
+		-select FULLNAME -where "MTFCC IN ('H2030', 'H2040', 'H2051', 'H2053', 'H3010')"; \
 	done;
+	ogrinfo $(@D) -sql 'CREATE SPATIAL INDEX ON $(basename $(@F))'
 
 # Filter out Whatcom, WA (only intersects Canada)
 counties.txt: GENZ2015/county.csv
@@ -205,6 +210,7 @@ city/buffers.shp: $(foreach x,$(JOINED_CITIES) $(SIMPLE_CITIES),city/$x/bufferwg
 	for d in $(basename $(^D)); do \
 		ogr2ogr $@ $$d $(basename $(<F)) -update -append -nlt POLYGON; \
 	done;
+	ogrinfo $(@D) -sql 'CREATE SPATIAL INDEX ON $(basename $(@F))'
 
 can/provinces.shp: can/gpr_000b11a_e.zip
 	ogr2ogr $@ /vsizip/$</$(basename $(<F)).shp $(TSRS)
@@ -221,10 +227,10 @@ can/gpr_000b11a_e.zip can/lcsd000a15a_e.zip: | can
 	ogr2ogr $@ /vsizip/$< $(basename $(<F)) $(TSRS)
 
 .SECONDEXPANSION:
-TIGER2016/%.zip GENZ2015/shp/%.zip: | $$(@D)
+TIGER2014/%.zip TIGER2016/%.zip GENZ2015/shp/%.zip: | $$(@D)
 	curl -o $@ $(CENSUS)/$@
 
-TIGER2016/AREAWATER TIGER2016/PRISECROADS TIGER2015/PLACE TIGER2015/UAC GENZ2015/shp city can bounds buffer png svg:; mkdir -p $@
+TIGER2016/AREAWATER TIGER2014/PRISECROADS TIGER2015/PLACE TIGER2015/UAC GENZ2015/shp city can bounds buffer png svg:; mkdir -p $@
 
 # Stadia
 
