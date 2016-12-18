@@ -74,10 +74,10 @@ CLIP = -clipdst city/$* -clipdstlayer bufferwgs84 -skipfailures
 # Local Arenas
 
 city/%/arenas.shp: city/%/bufferwgs84.shp $(ARENAS)
-	ogr2ogr -overwrite $@ wiki/List_of_National_Hockey_League_arenas.geojson $(CLIP)
-	ogr2ogr -update -append $@ wiki/National_Football_League.geojson $(CLIP)
-	ogr2ogr -update -append $@ wiki/Major_League_Baseball.geojson $(CLIP)
+	ogr2ogr -overwrite $@ wiki/Major_League_Baseball.geojson $(CLIP)
 	ogr2ogr -update -append $@ wiki/National_Basketball_Association.geojson $(CLIP)
+	ogr2ogr -update -append $@ wiki/List_of_National_Hockey_League_arenas.geojson $(CLIP)
+	ogr2ogr -update -append $@ wiki/National_Football_League.geojson $(CLIP)
 
 city/%/roads.shp: TIGER2014/prisecroads.shp city/%/bufferwgs84.shp | city/%
 	ogr2ogr $@ $< -overwrite $(CLIP) -nlt LINESTRING -select FULLNAME

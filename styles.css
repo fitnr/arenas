@@ -17,30 +17,34 @@
 }
 .bufferwgs84,
 .water {
-    fill: #E3F7FF;
+    fill: #E6F3FF;
     stroke: none;
 }
 circle {
-    stroke-width: 6px;
-    r: 18;
+    stroke-width: 3px;
+    fill-opacity: 0.2;
 }
 #buffer polygon {
     stroke-width: 0.5px;
     stroke: #666;
 }
 .league_nhl {
-    stroke: darkcyan;
-    fill: darkcyan;
+    stroke: #538B67;
+    fill: #538B67;
+    r: 8;
 }
 .league_nfl {
-    stroke: red;
-    fill: red;
+    stroke: #FF6D6F;
+    fill: #FF6D6F;
+    r: 8;
 }
 .league_mlb {
-    stroke: orange;
-    fill: orange;
+    stroke: #FFB84B;
+    fill: #FFB84B;
+    r: 9;
 }
 .league_nba {
-    stroke: cornflowerblue;
-    fill: cornflowerblue;
+    stroke: #5053ED;
+    fill: #5053ED;
+    r: 9;
 }
