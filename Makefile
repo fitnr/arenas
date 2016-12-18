@@ -58,14 +58,10 @@ CLIP = -clipdst city/$* -clipdstlayer bufferwgs84 -skipfailures
 # Local Arenas
 
 city/%/arenas.shp: city/%/bufferwgs84.shp $(ARENAS)
-	ogr2ogr -overwrite $@ wiki/List_of_National_Hockey_League_arenas.geojson $(CLIP) -nlt POINT \
-		-sql "SELECT Name, 'nhl' league FROM OGRGeoJSON"
-	ogr2ogr -update -append $@ wiki/National_Football_League.geojson $(CLIP) \
-		-sql "SELECT Name, 'nfl' league FROM OGRGeoJSON"
-	ogr2ogr -update -append $@ wiki/Major_League_Baseball.geojson $(CLIP) \
-		-sql "SELECT Name, 'mlb' league FROM OGRGeoJSON"
-	ogr2ogr -update -append $@ wiki/National_Basketball_Association.geojson $(CLIP) \
-		-sql "SELECT Name, 'nba' league FROM OGRGeoJSON"
+	ogr2ogr -overwrite $@ wiki/List_of_National_Hockey_League_arenas.geojson $(CLIP)
+	ogr2ogr -update -append $@ wiki/National_Football_League.geojson $(CLIP)
+	ogr2ogr -update -append $@ wiki/Major_League_Baseball.geojson $(CLIP)
+	ogr2ogr -update -append $@ wiki/National_Basketball_Association.geojson $(CLIP)
 
 city/%/roads.shp: TIGER2014/prisecroads.shp city/%/bufferwgs84.shp | city/%
 	ogr2ogr $@ $< -overwrite $(CLIP) -nlt LINESTRING -select FULLNAME
@@ -234,17 +230,22 @@ TIGER2016/AREAWATER TIGER2014/PRISECROADS TIGER2015/PLACE TIGER2015/UAC GENZ2015
 
 # Stadia
 
-National_Hockey_League_section = Teams
+National_Football_League_section = Clubs
 List_of_National_Hockey_League_arenas_section = Current_arenas
 Major_League_Baseball_section = Teams
 National_Basketball_Association_section = Teams
+
+National_Football_League_league = nfl
+List_of_National_Hockey_League_arenas_league = nhl
+Major_League_Baseball_league = mlb
+National_Basketball_Association_league = nba
 
 .PHONY: arenas
 arenas: $(ARENAS)
 
 wiki/%.geojson: kml/%.kml | wiki
 	@rm -f $@
-	ogr2ogr $@ $< -f GeoJSON -nln $*
+	ogr2ogr $@ $< -f GeoJSON -nln $* -sql "SELECT Name, '$($*_league)' league FROM "'"$(subst _, ,$($*_section))"'
 
 kml/%.kml: | kml
 	curl -Gso $@ $(KMLEXPORT) -d article=$* -d section=$($*_section)
