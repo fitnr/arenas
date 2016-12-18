@@ -21,7 +21,7 @@
 { "type": "Feature", "properties": { "Name": "PNC Arena", "league": "nhl" }, "geometry": { "type": "Point", "coordinates": [ -78.721944444444404, 35.803333333333299, 0.0 ] } },
 { "type": "Feature", "properties": { "Name": "PPG Paints Arena", "league": "nhl" }, "geometry": { "type": "Point", "coordinates": [ -79.989166666666705, 40.439444444444398, 0.0 ] } },
 { "type": "Feature", "properties": { "Name": "Prudential Center", "league": "nhl" }, "geometry": { "type": "Point", "coordinates": [ -74.171111111111102, 40.733611111111102, 0.0 ] } },
-{ "type": "Feature", "properties": { "Name": "Rogers Arena", "league": "nhl" }, "geometry": { "type": "Point", "coordinates": [ -79.389166666666696, 43.641388888888898, 0.0 ] } },
+{ "type": "Feature", "properties": { "Name": "Rogers Arena", "league": "nhl" }, "geometry": { "type": "Point", "coordinates": [ -123.108888888888998, 49.2777777777778, 0.0 ] } },
 { "type": "Feature", "properties": { "Name": "Rogers Place", "league": "nhl" }, "geometry": { "type": "Point", "coordinates": [ -113.497777777777998, 53.546944444444399, 0.0 ] } },
 { "type": "Feature", "properties": { "Name": "Scotiabank Saddledome", "league": "nhl" }, "geometry": { "type": "Point", "coordinates": [ -114.051944444444004, 51.0375, 0.0 ] } },
 { "type": "Feature", "properties": { "Name": "SAP Center at San Jose", "league": "nhl" }, "geometry": { "type": "Point", "coordinates": [ -121.901111111111007, 37.3327777777778, 0.0 ] } },
