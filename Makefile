@@ -59,12 +59,16 @@ CANADIAN_CITIES = calgary edmonton toronto vancouver
 .SECONDARY:
 
 all: $(addsuffix .svg,$(addprefix svg/,$(SIMPLE_CITIES) $(JOINED_CITIES))) \
-     $(addsuffix .png,$(addprefix png/,$(SIMPLE_CITIES) $(JOINED_CITIES)))
+     $(addsuffix .png,$(addprefix png/,$(SIMPLE_CITIES) $(JOINED_CITIES))) \
+     $(addsuffix -big.png,$(addprefix png/,$(SIMPLE_CITIES) $(JOINED_CITIES)))
 
 # Maps
 
+png/%-big.png: svg/%.svg | png
+	convert -background none -density 150x150 $< $@
+
 png/%.png: svg/%.svg | png
-	convert -density 150x150 $< -scale 33% $@
+	convert -background none -density 150x150 $< -scale 33% $@
 
 svg/%.svg: styles.css $(foreach g,$(GEO),city/%/$(g).shp) | svg
 	svgis draw -j local -xl -f 100 -c $< -p 100 -i Name -a mi,league -s 50 $(filter %.geojson %.shp,$^) -o $@
