@@ -292,3 +292,6 @@ kml/%.kml: | kml
 	curl -Gso $@ $(KMLEXPORT) -d article=$* -d section=$($*_section)
 
 kml wiki: ; mkdir -p $@
+
+install:
+	pip install 'svgis>=0.4.4'
